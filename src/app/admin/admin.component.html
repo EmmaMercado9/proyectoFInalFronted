@@ -1,0 +1,418 @@
+<!-- admin.component.html -->
+<div class="flex h-screen overflow-hidden bg-gray-100">
+  <!-- ══ SIDEBAR DESKTOP ══════════════════════════════════════════════════ -->
+  <aside
+    class="hidden md:flex flex-col w-56 bg-white border-r border-gray-100 flex-shrink-0 overflow-y-auto"
+  >
+    <!-- Logo -->
+    <div class="px-5 py-4 border-b border-gray-100">
+      <span class="text-xl font-black tracking-widest text-black">CLOUFIT</span>
+      <p class="text-[10px] text-gray-400 mt-0.5">Panel de administración</p>
+    </div>
+
+    <!-- Navegación -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5">
+      <!-- Inicio -->
+      <a
+        routerLink="/admin"
+        [routerLinkActiveOptions]="{ exact: true }"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-home text-sm w-4 text-center"></i>
+        Inicio
+      </a>
+
+      <p
+        class="px-3 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider"
+      >
+        Gestión
+      </p>
+
+      <!-- Usuarios -->
+      <div *ngIf="esAdmin">
+        <button
+          type="button"
+          (click)="toggleUsers()"
+          class="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+        >
+          <div class="flex items-center gap-2.5">
+            <i class="pi pi-users text-sm w-4 text-center"></i>
+            Usuarios
+          </div>
+          <i
+            class="pi text-xs text-gray-400 transition-transform"
+            [class.pi-chevron-down]="estadOpenUser"
+            [class.pi-chevron-right]="!estadOpenUser"
+          ></i>
+        </button>
+        <div *ngIf="estadOpenUser" class="ml-7 mt-0.5 space-y-0.5">
+          <a
+            routerLink="/admin/users"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Lista de usuarios
+          </a>
+        </div>
+      </div>
+
+      <!-- Ventas -->
+      <div>
+        <button
+          type="button"
+          (click)="toggleVentas()"
+          class="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+        >
+          <div class="flex items-center gap-2.5">
+            <i class="pi pi-shopping-cart text-sm w-4 text-center"></i>
+            Ventas
+          </div>
+          <i
+            class="pi text-xs text-gray-400 transition-transform"
+            [class.pi-chevron-down]="estadOpenV"
+            [class.pi-chevron-right]="!estadOpenV"
+          ></i>
+        </button>
+        <div *ngIf="estadOpenV" class="ml-7 mt-0.5 space-y-0.5">
+          <a
+            routerLink="/admin/orders"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Listado ventas
+          </a>
+          <a
+            routerLink="/admin/devoluciones"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Devoluciones
+          </a>
+          <a
+            routerLink="/admin/clients"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Clientes
+          </a>
+          <a
+            routerLink="/admin/pos"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Punto de venta
+          </a>
+        </div>
+      </div>
+
+      <!-- Productos -->
+      <div>
+        <button
+          type="button"
+          (click)="toggleProductos()"
+          class="flex items-center justify-between w-full px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+        >
+          <div class="flex items-center gap-2.5">
+            <i class="pi pi-tag text-sm w-4 text-center"></i>
+            Productos
+          </div>
+          <i
+            class="pi text-xs text-gray-400 transition-transform"
+            [class.pi-chevron-down]="estadOpenProd"
+            [class.pi-chevron-right]="!estadOpenProd"
+          ></i>
+        </button>
+        <div *ngIf="estadOpenProd" class="ml-7 mt-0.5 space-y-0.5">
+          <a
+            routerLink="/admin/products"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Inventario
+          </a>
+          <a
+            *ngIf="esAdmin"
+            routerLink="/admin/formProduct/new"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Nuevo producto
+          </a>
+          <a
+            *ngIf="esAdmin"
+            routerLink="/admin/category"
+            routerLinkActive="text-black font-medium"
+            class="block px-3 py-1.5 text-xs text-gray-500 hover:text-black rounded-lg transition"
+          >
+            Categorías
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Usuario en el pie del sidebar -->
+    <div
+      *ngIf="usuario$ | async as usuario"
+      class="px-4 py-3 border-t border-gray-100"
+    >
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-7 h-7 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center flex-shrink-0"
+        >
+          {{ usuario.name?.charAt(0)?.toUpperCase() ?? 'A' }}
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-semibold text-black truncate">
+            {{ usuario.name }}
+          </p>
+          <p class="text-[10px] text-gray-400 truncate">{{ usuario.role }}</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ CONTENIDO PRINCIPAL ══════════════════════════════════════════════ -->
+  <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+    <!-- ── NAVBAR ──────────────────────────────────────────────────────── -->
+    <header
+      class="bg-white border-b border-gray-100 flex items-center justify-between px-4 py-3 flex-shrink-0"
+    >
+      <!-- Hamburguesa mobile -->
+      <button
+        type="button"
+        aria-label="Abrir menú"
+        class="md:hidden p-2 rounded-xl hover:bg-gray-100 transition text-gray-500"
+        (click)="sidebar()"
+      >
+        <i class="pi pi-bars text-sm"></i>
+      </button>
+
+      <!-- Logo mobile -->
+      <span class="md:hidden text-lg font-black tracking-widest text-black">
+        CLOUFIT
+      </span>
+
+      <!-- Spacer desktop -->
+      <div class="hidden md:block flex-1"></div>
+
+      <!-- Usuario navbar -->
+      <div
+        class="relative"
+        tabindex="0"
+        (click)="show()"
+        (focusout)="onMenuFocusOut($event)"
+      >
+        <ng-container *ngIf="usuario$ | async as usuario">
+          <button
+            type="button"
+            [attr.aria-expanded]="showMenu"
+            aria-haspopup="menu"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition"
+          >
+            <div
+              class="w-8 h-8 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center"
+            >
+              {{ usuario.name?.charAt(0)?.toUpperCase() ?? 'A' }}
+            </div>
+            <div class="text-left hidden sm:block">
+              <p class="text-sm font-semibold text-black leading-tight">
+                {{ usuario.name }}
+              </p>
+              <p class="text-xs text-gray-400">{{ usuario.role }}</p>
+            </div>
+            <i
+              class="pi pi-chevron-down text-xs text-gray-400 hidden sm:block"
+            ></i>
+          </button>
+
+          <!-- Dropdown -->
+          @if (showMenu) {
+            <div
+              class="absolute right-0 mt-2 w-72 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 p-4"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="flex items-center gap-3 mb-3">
+                <div
+                  class="w-10 h-10 rounded-full bg-black text-white font-bold text-sm flex items-center justify-center"
+                >
+                  {{ usuario.name?.charAt(0)?.toUpperCase() ?? 'A' }}
+                </div>
+                <div class="min-w-0">
+                  <p class="font-semibold text-sm text-black truncate">
+                    {{ usuario.name }}
+                  </p>
+                  <p class="text-xs text-gray-400 truncate">
+                    {{ usuario.mail }}
+                  </p>
+                  <p class="text-xs text-gray-400">{{ usuario.role }}</p>
+                </div>
+              </div>
+
+              <hr class="border-gray-100 my-2" />
+
+              <button
+                type="button"
+                (click)="logout()"
+                class="flex items-center gap-2 w-full px-2 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition"
+              >
+                <i class="pi pi-sign-out text-sm"></i>
+                Cerrar sesión
+              </button>
+            </div>
+          }
+        </ng-container>
+      </div>
+    </header>
+
+    <!-- ── CONTENIDO ROUTER ─────────────────────────────────────────────── -->
+    <main class="flex-1 overflow-y-auto">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- ══ SIDEBAR MOBILE ═══════════════════════════════════════════════════ -->
+@if (showSidebar) {
+  <!-- Backdrop -->
+  <div
+    class="fixed inset-0 z-40 bg-black/30 md:hidden"
+    (click)="sidebar()"
+  ></div>
+
+  <!-- Panel -->
+  <aside
+    class="fixed top-0 left-0 h-full w-64 bg-white z-50 flex flex-col shadow-2xl md:hidden"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Cabecera mobile sidebar -->
+    <div
+      class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
+    >
+      <span class="text-xl font-black tracking-widest text-black">CLOUFIT</span>
+      <button
+        type="button"
+        aria-label="Cerrar menú"
+        (click)="showSidebar = false"
+        class="p-2 rounded-xl hover:bg-gray-100 transition text-gray-400"
+      >
+        <i class="pi pi-times text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Nav mobile -->
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+      <a
+        routerLink="/admin"
+        [routerLinkActiveOptions]="{ exact: true }"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-home text-sm w-4 text-center"></i>
+        Inicio
+      </a>
+
+      <p
+        class="px-3 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider"
+      >
+        Gestión
+      </p>
+
+      <a
+        *ngIf="esAdmin"
+        routerLink="/admin/users"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-users text-sm w-4 text-center"></i>
+        Usuarios
+      </a>
+
+      <a
+        routerLink="/admin/orders"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-shopping-cart text-sm w-4 text-center"></i>
+        Ventas
+      </a>
+
+      <a
+        routerLink="/admin/pos"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-calculator text-sm w-4 text-center"></i>
+        Punto de venta
+      </a>
+
+      <a
+        routerLink="/admin/devoluciones"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-replay text-sm w-4 text-center"></i>
+        Devoluciones
+      </a>
+
+      <a
+        routerLink="/admin/clients"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-id-card text-sm w-4 text-center"></i>
+        Clientes
+      </a>
+
+      <a
+        routerLink="/admin/products"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-tag text-sm w-4 text-center"></i>
+        Productos
+      </a>
+
+      <a
+        *ngIf="esAdmin"
+        routerLink="/admin/formProduct/new"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-plus-circle text-sm w-4 text-center"></i>
+        Nuevo producto
+      </a>
+
+      <a
+        *ngIf="esAdmin"
+        routerLink="/admin/category"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-folder text-sm w-4 text-center"></i>
+        Categorías
+      </a>
+    </nav>
+
+    <!-- Cerrar sesión mobile -->
+    <div class="px-4 py-3 border-t border-gray-100">
+      <button
+        type="button"
+        (click)="logout()"
+        class="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition"
+      >
+        <i class="pi pi-sign-out text-sm"></i>
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+}

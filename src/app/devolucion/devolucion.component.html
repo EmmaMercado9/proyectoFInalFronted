@@ -1,0 +1,468 @@
+<!-- devolucion.component.html -->
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <div class="max-w-3xl mx-auto pt-6">
+    <!-- Cabecera -->
+    <div class="flex items-center gap-3 mb-6 no-print">
+      <a
+        [routerLink]="orden ? ['/admin/comprobante', orden.trackingId] : ['/admin/orders']"
+        class="p-2 rounded-xl hover:bg-gray-200 text-gray-500 transition"
+        aria-label="Volver"
+      >
+        <i class="pi pi-arrow-left text-sm"></i>
+      </a>
+      <div>
+        <h2 class="text-2xl font-bold text-black">Devolución o cambio</h2>
+        @if (orden) {
+          <p class="text-sm text-gray-400 mt-0.5">
+            Venta #{{ orden.idOrder }} ·
+            {{ orden.orderDate | date: 'dd/MM/yyyy HH:mm' }} ·
+            {{ orden.cliente?.name ?? 'Mostrador' }}
+          </p>
+        }
+      </div>
+    </div>
+
+    @if (isLoading) {
+      <div class="flex justify-center py-20">
+        <i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i>
+      </div>
+    } @else if (error || !orden) {
+      <div class="bg-white border border-gray-200 rounded-2xl p-12 text-center">
+        <i class="pi pi-times-circle text-4xl text-red-400 mb-4"></i>
+        <p class="text-lg font-semibold text-gray-700">Venta no encontrada</p>
+        <a routerLink="/admin/orders" class="inline-block mt-5 px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-xl">
+          Ir a ventas
+        </a>
+      </div>
+    } @else if (resultado) {
+      <!-- ══ Resultado ═══════════════════════════════════════════════════ -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-8 space-y-5">
+        <div class="text-center">
+          <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="pi pi-check text-2xl text-green-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-black">
+            {{ resultado.tipo === 'CAMBIO' ? 'Cambio registrado' : 'Devolución registrada' }}
+          </h3>
+          <p class="text-xs text-gray-400 mt-1">
+            N° {{ resultado.idDevolucion }} ·
+            {{ resultado.fecha | date: 'dd/MM/yyyy HH:mm' }}
+            @if (resultado.usuario) {
+              · {{ resultado.usuario }}
+            }
+          </p>
+        </div>
+
+        <div class="divide-y divide-gray-100 border border-gray-100 rounded-xl">
+          @for (it of resultado.items; track it.idDetail) {
+            <div class="flex justify-between gap-3 px-4 py-2.5 text-sm">
+              <div class="min-w-0">
+                <p class="font-medium text-black truncate">{{ it.quantity }} × {{ it.productoNombre }}</p>
+                <p class="text-xs text-gray-400">
+                  {{ it.variante }}
+                  <span [class.text-red-500]="!it.reingresaStock">
+                    · {{ it.reingresaStock ? 'volvió al stock' : 'fallado, no vuelve al stock' }}
+                  </span>
+                </p>
+              </div>
+              <span class="font-semibold text-black">${{ it.monto | number: '1.2-2' }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="space-y-1.5 text-sm">
+          <div class="flex justify-between text-gray-500">
+            <span>Valor devuelto</span>
+            <span>${{ resultado.montoDevuelto | number: '1.2-2' }}</span>
+          </div>
+          @if (resultado.tipo === 'CAMBIO') {
+            <div class="flex justify-between text-gray-500">
+              <span>Productos nuevos</span>
+              <span>${{ resultado.montoNuevaVenta | number: '1.2-2' }}</span>
+            </div>
+          }
+          <div class="flex justify-between font-bold text-base pt-2 border-t border-gray-100">
+            @if (resultado.diferencia > 0) {
+              <span>El cliente pagó</span>
+              <span>${{ resultado.diferencia | number: '1.2-2' }}</span>
+            } @else if (resultado.diferencia < 0) {
+              <span>
+                Reintegrar al cliente
+                <span class="block text-xs font-normal text-gray-400">
+                  {{ formaReintegroLabel(resultado.formaReintegro, resultado.paymentOrden) }}
+                </span>
+              </span>
+              <span class="text-green-600">${{ -resultado.diferencia | number: '1.2-2' }}</span>
+            } @else {
+              <span>Sin diferencia de dinero</span>
+              <span>$0</span>
+            }
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 no-print">
+          <a
+            [routerLink]="['/admin/comprobante', resultado.trackingIdOrden]"
+            class="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition text-center"
+          >
+            Ver venta original
+          </a>
+          @if (resultado.trackingIdOrdenCambio) {
+            <a
+              [routerLink]="['/admin/comprobante', resultado.trackingIdOrdenCambio]"
+              class="flex-1 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition text-center"
+            >
+              Ver venta del cambio
+            </a>
+          }
+          <button
+            type="button"
+            (click)="imprimir()"
+            class="flex-1 py-3 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition flex items-center justify-center gap-2"
+          >
+            <i class="pi pi-print text-sm"></i> Imprimir
+          </button>
+        </div>
+      </div>
+    } @else {
+      <!-- ══ Formulario ══════════════════════════════════════════════════ -->
+      @if (bloqueo) {
+        <div class="bg-red-50 border border-red-100 rounded-2xl p-4 mb-4 flex gap-3 text-sm text-red-700">
+          <i class="pi pi-ban mt-0.5"></i>
+          <div>
+            <p class="font-semibold">No se puede registrar</p>
+            <p class="text-xs mt-0.5">{{ bloqueo }}</p>
+          </div>
+        </div>
+      } @else if (orden.fechaLimiteDevolucion) {
+        <div class="bg-blue-50 border border-blue-100 rounded-2xl p-3 mb-4 text-xs text-blue-700 flex items-center gap-2">
+          <i class="pi pi-clock"></i>
+          Se aceptan devoluciones y cambios hasta el
+          <b>{{ orden.fechaLimiteDevolucion | date: 'dd/MM/yyyy HH:mm' }}</b>
+        </div>
+      }
+
+      <!-- Tipo -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <button
+          type="button"
+          (click)="tipo = 'DEVOLUCION'"
+          class="p-4 rounded-2xl border-2 text-left transition bg-white"
+          [class.border-black]="tipo === 'DEVOLUCION'"
+          [class.border-gray-200]="tipo !== 'DEVOLUCION'"
+        >
+          <i class="pi pi-replay text-lg mb-1"></i>
+          <p class="text-sm font-bold text-black">Devolución</p>
+          <p class="text-xs text-gray-400">Devuelve productos y se le reintegra el dinero</p>
+        </button>
+        <button
+          type="button"
+          (click)="tipo = 'CAMBIO'"
+          class="p-4 rounded-2xl border-2 text-left transition bg-white"
+          [class.border-black]="tipo === 'CAMBIO'"
+          [class.border-gray-200]="tipo !== 'CAMBIO'"
+        >
+          <i class="pi pi-arrow-right-arrow-left text-lg mb-1"></i>
+          <p class="text-sm font-bold text-black">Cambio</p>
+          <p class="text-xs text-gray-400">Devuelve productos y se lleva otros</p>
+        </button>
+      </div>
+
+      <!-- 1. Qué devuelve -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-sm font-bold text-black">1. ¿Qué devuelve?</p>
+          <button type="button" (click)="devolverTodo()" class="text-xs font-semibold text-gray-500 hover:text-black">
+            Devolver todo
+          </button>
+        </div>
+
+        <div class="divide-y divide-gray-100">
+          @for (l of lineas; track l.detalle.idDetail) {
+            <div class="py-3 flex flex-col sm:flex-row sm:items-center gap-3" [class.opacity-50]="l.devolvible === 0">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                @if (l.detalle.imagenUrl) {
+                  <img [src]="l.detalle.imagenUrl" alt="" class="w-11 h-11 rounded-lg object-cover border border-gray-100" />
+                } @else {
+                  <div class="w-11 h-11 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <i class="pi pi-image text-gray-300"></i>
+                  </div>
+                }
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-black truncate">{{ l.detalle.productoNombre }}</p>
+                  <p class="text-xs text-gray-400">
+                    {{ [l.detalle.talla, l.detalle.color].join(' ').trim() || l.detalle.sku }}
+                    · ${{ l.detalle.priceUnit | number: '1.0-0' }} c/u
+                  </p>
+                  <p class="text-[11px] text-gray-400">
+                    Vendidas {{ l.detalle.quantity }}
+                    @if (l.detalle.cantidadDevuelta) {
+                      · ya devueltas {{ l.detalle.cantidadDevuelta }}
+                    }
+                  </p>
+                </div>
+              </div>
+
+              @if (l.devolvible > 0) {
+                <div class="flex items-center gap-3 sm:justify-end">
+                  @if (l.cantidad > 0) {
+                    <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+                      <input type="checkbox" [(ngModel)]="l.reingresaStock" class="accent-black" />
+                      Vuelve al stock
+                    </label>
+                  }
+                  <div class="flex items-center border border-gray-200 rounded-xl">
+                    <button type="button" (click)="cambiarCantidad(l, -1)" class="w-8 h-8 text-gray-500 hover:text-black" aria-label="Menos">−</button>
+                    <span class="w-8 text-center text-sm font-semibold">{{ l.cantidad }}</span>
+                    <button type="button" (click)="cambiarCantidad(l, 1)" class="w-8 h-8 text-gray-500 hover:text-black" aria-label="Más">+</button>
+                  </div>
+                </div>
+              } @else {
+                <span class="text-xs text-gray-400">Ya devuelto</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Motivo -->
+        <div class="mt-4">
+          <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Motivo</p>
+          <div class="flex flex-wrap gap-1.5 mb-2">
+            @for (m of motivosRapidos; track m) {
+              <button
+                type="button"
+                (click)="motivo = m"
+                class="px-2.5 py-1 rounded-full text-xs border transition"
+                [class.bg-black]="motivo === m"
+                [class.text-white]="motivo === m"
+                [class.border-black]="motivo === m"
+                [class.border-gray-200]="motivo !== m"
+                [class.text-gray-600]="motivo !== m"
+              >
+                {{ m }}
+              </button>
+            }
+          </div>
+          <input
+            [(ngModel)]="motivo"
+            maxlength="255"
+            placeholder="Detalle (opcional)"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+          />
+        </div>
+      </div>
+
+      <!-- 2. Qué se lleva (cambio) -->
+      @if (tipo === 'CAMBIO') {
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+          <p class="text-sm font-bold text-black mb-3">2. ¿Qué se lleva?</p>
+
+          <div class="relative">
+            <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input
+              [(ngModel)]="busqueda"
+              (ngModelChange)="onBuscar($event)"
+              placeholder="Buscar producto por nombre…"
+              class="w-full border border-gray-200 rounded-xl pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
+            @if (buscando) {
+              <i class="pi pi-spin pi-spinner absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            }
+            @if (resultados.length) {
+              <div class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
+                @for (p of resultados; track p.idProduct) {
+                  <button
+                    type="button"
+                    (click)="abrirProducto(p)"
+                    class="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 text-left"
+                  >
+                    @if (p.imagenPrincipalUrl) {
+                      <img [src]="p.imagenPrincipalUrl" alt="" class="w-8 h-8 rounded-md object-cover" />
+                    } @else {
+                      <div class="w-8 h-8 rounded-md bg-gray-100"></div>
+                    }
+                    <span class="flex-1 text-sm text-black truncate">{{ p.nameProduct }}</span>
+                    <span class="text-xs text-gray-400">stock {{ p.stockTotal }}</span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Selector de variante -->
+          @if (productoAbierto) {
+            <div class="mt-3 border border-gray-200 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-2">
+                <p class="text-sm font-semibold text-black">{{ productoAbierto.nameProduct }}</p>
+                <button type="button" (click)="productoAbierto = null" class="text-gray-400 hover:text-black" aria-label="Cerrar">
+                  <i class="pi pi-times text-xs"></i>
+                </button>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @for (v of variantesDisponibles(productoAbierto); track v.variantId) {
+                  <button
+                    type="button"
+                    (click)="agregarNuevo(productoAbierto, v)"
+                    [disabled]="v.stock <= 0"
+                    class="px-3 py-2 border border-gray-200 rounded-xl text-xs hover:border-black transition disabled:opacity-40 disabled:cursor-not-allowed text-left"
+                  >
+                    <span class="font-semibold text-black block">{{ v.descripcion || v.sku }}</span>
+                    <span class="text-gray-400">${{ v.precioVenta | number: '1.0-0' }} · stock {{ v.stock }}</span>
+                  </button>
+                } @empty {
+                  <p class="text-xs text-gray-400">No hay variantes activas.</p>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Lista de nuevos -->
+          <div class="mt-3 divide-y divide-gray-100">
+            @for (n of nuevos; track n.variantId) {
+              <div class="py-2.5 flex items-center gap-3">
+                @if (n.imagenUrl) {
+                  <img [src]="n.imagenUrl" alt="" class="w-10 h-10 rounded-lg object-cover border border-gray-100" />
+                }
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-semibold text-black truncate">{{ n.nombre }}</p>
+                  <p class="text-xs text-gray-400">{{ n.variante }} · ${{ n.precio | number: '1.0-0' }} c/u</p>
+                </div>
+                <div class="flex items-center border border-gray-200 rounded-xl">
+                  <button type="button" (click)="cambiarCantidadNuevo(n, -1)" class="w-8 h-8 text-gray-500 hover:text-black" aria-label="Menos">−</button>
+                  <span class="w-8 text-center text-sm font-semibold">{{ n.cantidad }}</span>
+                  <button type="button" (click)="cambiarCantidadNuevo(n, 1)" class="w-8 h-8 text-gray-500 hover:text-black" aria-label="Más">+</button>
+                </div>
+              </div>
+            } @empty {
+              @if (!productoAbierto) {
+                <p class="text-xs text-gray-400 mt-2">Buscá y agregá los productos que se lleva.</p>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      <!-- 3. Resumen y dinero -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+        <p class="text-sm font-bold text-black mb-3">{{ tipo === 'CAMBIO' ? '3' : '2' }}. Resumen</p>
+        <div class="space-y-1.5 text-sm">
+          <div class="flex justify-between text-gray-500">
+            <span>
+              Valor de lo devuelto
+              @if (orden.discount > 0) {
+                <span class="text-[11px] text-gray-400">(con el descuento de la venta)</span>
+              }
+            </span>
+            <span>${{ montoDevuelto | number: '1.2-2' }}</span>
+          </div>
+          @if (tipo === 'CAMBIO') {
+            <div class="flex justify-between text-gray-500">
+              <span>Productos nuevos</span>
+              <span>${{ montoNuevos | number: '1.2-2' }}</span>
+            </div>
+          }
+          <div class="flex justify-between font-bold text-base pt-2 border-t border-gray-100">
+            @if (diferencia > 0) {
+              <span>El cliente paga</span>
+              <span>${{ abs | number: '1.2-2' }}</span>
+            } @else if (diferencia < 0) {
+              <span>Reintegrar al cliente</span>
+              <span class="text-green-600">${{ abs | number: '1.2-2' }}</span>
+            } @else {
+              <span>Sin diferencia</span>
+              <span>$0</span>
+            }
+          </div>
+        </div>
+
+        @if (diferencia < 0) {
+          <div class="mt-4">
+            <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">¿Cómo se reintegra?</p>
+            <div class="grid gap-2" [class.grid-cols-2]="orden.payment !== 'EFECTIVO'">
+              <button
+                type="button"
+                (click)="formaReintegro = 'EFECTIVO'"
+                class="py-2.5 rounded-xl border text-sm font-medium transition"
+                [class.border-black]="formaReintegro === 'EFECTIVO'"
+                [class.bg-black]="formaReintegro === 'EFECTIVO'"
+                [class.text-white]="formaReintegro === 'EFECTIVO'"
+                [class.border-gray-200]="formaReintegro !== 'EFECTIVO'"
+              >
+                Efectivo
+              </button>
+              <button
+                *ngIf="orden.payment !== 'EFECTIVO'"
+                type="button"
+                (click)="formaReintegro = 'MISMO_MEDIO'"
+                class="py-2.5 rounded-xl border text-sm font-medium transition"
+                [class.border-black]="formaReintegro === 'MISMO_MEDIO'"
+                [class.bg-black]="formaReintegro === 'MISMO_MEDIO'"
+                [class.text-white]="formaReintegro === 'MISMO_MEDIO'"
+                [class.border-gray-200]="formaReintegro !== 'MISMO_MEDIO'"
+              >
+                Mismo medio ({{ paymentLabel(orden.payment) }})
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (tipo === 'CAMBIO' && diferencia > 0) {
+          <div class="mt-4">
+            <label for="pagoDif" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+              ¿Con qué paga la diferencia?
+            </label>
+            <select
+              id="pagoDif"
+              [(ngModel)]="paymentDiferencia"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              @for (m of metodosPago; track m) {
+                <option [value]="m">{{ paymentLabel(m) }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+
+      <button
+        type="button"
+        (click)="confirmar()"
+        [disabled]="!puedeConfirmar"
+        class="w-full py-3.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        @if (enviando) {
+          <i class="pi pi-spin pi-spinner text-sm"></i>
+        }
+        Confirmar {{ tipo === 'CAMBIO' ? 'cambio' : 'devolución' }}
+      </button>
+
+      <!-- Historial -->
+      @if (historial.length) {
+        <div class="mt-6">
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Devoluciones anteriores</p>
+          <div class="space-y-2">
+            @for (h of historial; track h.idDevolucion) {
+              <div class="bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <div class="flex justify-between">
+                  <span class="font-semibold text-black">
+                    {{ h.tipo === 'CAMBIO' ? 'Cambio' : 'Devolución' }} · {{ h.fecha | date: 'dd/MM HH:mm' }}
+                  </span>
+                  <span class="text-gray-500">${{ h.montoDevuelto | number: '1.0-0' }}</span>
+                </div>
+                <p class="text-xs text-gray-400">
+                  @for (it of h.items; track it.idDetail; let last = $last) {
+                    {{ it.quantity }}× {{ it.productoNombre }}{{ last ? '' : ', ' }}
+                  }
+                  @if (h.motivo) {
+                    · {{ h.motivo }}
+                  }
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+</section>
+

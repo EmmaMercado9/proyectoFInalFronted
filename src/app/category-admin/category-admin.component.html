@@ -1,0 +1,397 @@
+<!-- category-admin.component.html -->
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <!-- ══ Cabecera ══════════════════════════════════════════════════════════ -->
+  <div
+    class="max-w-4xl mx-auto pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
+  >
+    <div>
+      <h2 class="text-2xl font-bold text-black">Categorías</h2>
+      <p class="text-sm text-gray-400 mt-0.5">
+        Organizá tus productos con categorías y subcategorías
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="abrirNuevaCategoria()"
+      class="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition self-start sm:self-auto"
+    >
+      <i class="pi pi-plus text-xs"></i>
+      Nueva categoría
+    </button>
+  </div>
+
+  <!-- ══ Lista de categorías ═══════════════════════════════════════════════ -->
+  <div class="max-w-4xl mx-auto space-y-3">
+    <!-- Sin categorías -->
+    <div
+      *ngIf="listCategory.length === 0"
+      class="bg-white border border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center"
+    >
+      <i class="pi pi-folder-open text-4xl text-gray-200 mb-3"></i>
+      <p class="text-sm font-semibold text-gray-400 mb-1">
+        No hay categorías todavía
+      </p>
+      <p class="text-xs text-gray-300 mb-5">
+        Creá la primera para empezar a organizar tus productos
+      </p>
+      <button
+        type="button"
+        (click)="abrirNuevaCategoria()"
+        class="px-4 py-2 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition"
+      >
+        Crear categoría
+      </button>
+    </div>
+
+    <!-- Tarjeta por categoría -->
+    <div
+      *ngFor="let cat of listCategory"
+      class="bg-white border border-gray-200 rounded-2xl overflow-hidden"
+    >
+      <!-- Fila de la categoría -->
+      <div class="flex items-center gap-3 px-5 py-4">
+        <!-- Ícono carpeta -->
+        <div
+          class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0"
+        >
+          <i class="pi pi-folder text-sm text-gray-500"></i>
+        </div>
+
+        <!-- Nombre y cantidad de subcategorías -->
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-black truncate">
+            {{ cat.nameCategory }}
+          </p>
+          <p class="text-xs text-gray-400 mt-0.5">
+            {{ cat.cantidadSubcategorias }}
+            subcategoría{{ (cat.cantidadSubcategorias) !== 1 ? 's' : '' }}
+            · {{ cat.cantidadProductos }}
+            producto{{ cat.cantidadProductos !== 1 ? 's' : '' }}
+          </p>
+        </div>
+
+        <!-- Badge estado -->
+        <span
+          class="text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+          [class.bg-green-100]="cat.status === 'ACTIVO'"
+          [class.text-green-700]="cat.status === 'ACTIVO'"
+          [class.bg-gray-100]="cat.status !== 'ACTIVO'"
+          [class.text-gray-500]="cat.status !== 'ACTIVO'"
+        >
+          {{ cat.status === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+        </span>
+
+        <!-- Botón expandir subcategorías -->
+        <button
+          *ngIf="cat.subCategorias && cat.subCategorias.length > 0"
+          (click)="toggleExpanded(cat.idCategory)"
+          class="p-2 rounded-lg hover:bg-gray-100 transition text-gray-400 flex-shrink-0"
+        >
+          <i
+            class="pi text-xs"
+            [class.pi-chevron-down]="expanded.includes(cat.idCategory)"
+            [class.pi-chevron-right]="!expanded.includes(cat.idCategory)"
+          ></i>
+        </button>
+
+        <!-- Menú acciones categoría -->
+
+        <!-- Acciones categoría — íconos directos -->
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button
+            (click)="abrirModalSubcategoria(cat.idCategory)"
+            class="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition"
+            title="Agregar subcategoría"
+          >
+            <i class="pi pi-plus text-xs"></i>
+          </button>
+          <button
+            type="button"
+            (click)="abrirRenombrar(cat)"
+            class="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition"
+            title="Renombrar categoría"
+            aria-label="Renombrar categoría"
+          >
+            <i class="pi pi-pencil text-xs"></i>
+          </button>
+          <button
+            type="button"
+            (click)="deleteCategory(cat)"
+            class="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition"
+            [class.opacity-40]="cat.cantidadProductos > 0"
+            [title]="
+              cat.cantidadProductos > 0
+                ? 'Tiene productos asociados: no se puede eliminar'
+                : 'Eliminar categoría'
+            "
+            aria-label="Eliminar categoría"
+          >
+            <i class="pi pi-trash text-xs"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Subcategorías expandidas -->
+      <div
+        *ngIf="
+          cat.subCategorias &&
+          cat.subCategorias.length > 0 &&
+          expanded.includes(cat.idCategory)
+        "
+        class="border-t border-gray-100"
+      >
+        <div
+          *ngFor="let sub of cat.subCategorias; let last = last"
+          class="flex items-center gap-3 px-5 py-3 bg-gray-50"
+          [class.border-b]="!last"
+          [class.border-gray-100]="!last"
+        >
+          <div class="w-4 flex-shrink-0"></div>
+          <div class="w-px h-4 bg-gray-300 flex-shrink-0"></div>
+
+          <div
+            class="w-6 h-6 rounded-md bg-white border border-gray-200 flex items-center justify-center flex-shrink-0"
+          >
+            <i class="pi pi-tag text-[10px] text-gray-400"></i>
+          </div>
+
+          <p class="flex-1 text-sm text-gray-700 truncate min-w-0">
+            {{ sub.nombre }}
+            <span class="text-xs text-gray-400">
+              · {{ sub.cantidadProductos }} prod.
+            </span>
+          </p>
+
+          <span
+            class="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+            [class.bg-green-100]="sub.status === 'ACTIVO'"
+            [class.text-green-700]="sub.status === 'ACTIVO'"
+            [class.bg-gray-100]="sub.status !== 'ACTIVO'"
+            [class.text-gray-500]="sub.status !== 'ACTIVO'"
+          >
+            {{ sub.status === 'ACTIVO' ? 'Activo' : 'Inactivo' }}
+          </span>
+
+          <!-- Menú acciones subcategoría -->
+
+          <!-- Acciones subcategoría — íconos directos -->
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button
+              type="button"
+              (click)="abrirMover(sub)"
+              [disabled]="listCategory.length < 2"
+              class="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-black transition disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Mover a otra categoría"
+              aria-label="Mover a otra categoría"
+            >
+              <i class="pi pi-arrow-right-arrow-left text-[10px]"></i>
+            </button>
+            <button
+              type="button"
+              (click)="toggleSubStatus(sub)"
+              class="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-black transition"
+              [title]="sub.status === 'ACTIVO' ? 'Desactivar' : 'Activar'"
+              [attr.aria-label]="sub.status === 'ACTIVO' ? 'Desactivar' : 'Activar'"
+            >
+              <i
+                class="pi text-[10px]"
+                [class.pi-eye-slash]="sub.status === 'ACTIVO'"
+                [class.pi-eye]="sub.status !== 'ACTIVO'"
+              ></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Botón agregar subcategoría al pie de la lista expandida -->
+        <button
+          (click)="abrirModalSubcategoria(cat.idCategory)"
+          class="flex items-center gap-2 w-full px-5 py-3 text-xs text-gray-400 hover:text-black hover:bg-gray-100 transition border-t border-gray-100 bg-gray-50"
+        >
+          <i class="pi pi-plus text-xs"></i>
+          Agregar subcategoría a {{ cat.nameCategory }}
+        </button>
+      </div>
+
+      <!-- Botón agregar cuando no tiene subcategorías -->
+      <div
+        *ngIf="!cat.subCategorias || cat.subCategorias.length === 0"
+        class="border-t border-gray-100"
+      >
+        <button
+          (click)="abrirModalSubcategoria(cat.idCategory)"
+          class="flex items-center gap-2 w-full px-5 py-3 text-xs text-gray-400 hover:text-black hover:bg-gray-50 transition"
+        >
+          <i class="pi pi-plus text-xs"></i>
+          Agregar primera subcategoría
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Toast y Confirm ═══════════════════════════════════════════════════ -->
+<p-confirmDialog></p-confirmDialog>
+
+<!-- ══ Modal — Nueva categoría ══════════════════════════════════════════ -->
+<p-dialog
+  [header]="editingCategoryId === null ? 'Nueva categoría' : 'Renombrar categoría'"
+  [modal]="true"
+  [(visible)]="visible"
+  [style]="{ width: '26rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="formCategory" (ngSubmit)="saveCategory()" class="pt-2">
+    <p *ngIf="editingCategoryId === null" class="text-xs text-gray-400 mb-5">
+      La categoría se creará como
+      <span class="font-semibold text-green-600">Activa</span>
+      automáticamente.
+    </p>
+
+    <div class="mb-6">
+      <label class="block text-sm font-semibold text-black mb-1.5">
+        Nombre <span class="text-red-500">*</span>
+      </label>
+      <input
+        formControlName="nameCategory"
+        type="text"
+        placeholder="Ej: Zapatillas"
+        autocomplete="off"
+        class="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+        [class.border-red-400]="hasErrorCat('nameCategory', 'required')"
+        [class.border-gray-200]="!hasErrorCat('nameCategory', 'required')"
+      />
+      <p
+        *ngIf="hasErrorCat('nameCategory', 'required')"
+        class="text-xs text-red-500 mt-1 flex items-center gap-1"
+      >
+        <i class="pi pi-exclamation-triangle text-xs"></i>
+        Campo obligatorio
+      </p>
+    </div>
+
+    <div class="flex gap-3 justify-end">
+      <button
+        type="button"
+        (click)="visible = false"
+        class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        [disabled]="formCategory.invalid || saving"
+        class="px-4 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {{ editingCategoryId === null ? 'Crear categoría' : 'Guardar' }}
+      </button>
+    </div>
+  </form>
+</p-dialog>
+
+<!-- ══ Modal — Nueva subcategoría ════════════════════════════════════════ -->
+<p-dialog
+  header="Nueva subcategoría"
+  [modal]="true"
+  [(visible)]="modalSubcategoriaVisible"
+  [style]="{ width: '26rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="formSubCategory" (ngSubmit)="addSubCategory()" class="pt-2">
+    <p class="text-xs text-gray-400 mb-5">
+      La subcategoría se creará como
+      <span class="font-semibold text-green-600">Activa</span>
+      automáticamente.
+    </p>
+
+    <div class="mb-6">
+      <label class="block text-sm font-semibold text-black mb-1.5">
+        Nombre <span class="text-red-500">*</span>
+      </label>
+      <input
+        formControlName="nombre"
+        type="text"
+        placeholder="Ej: Running"
+        autocomplete="off"
+        class="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+        [class.border-red-400]="hasErrorSub('nombre', 'required')"
+        [class.border-gray-200]="!hasErrorSub('nombre', 'required')"
+      />
+      <p
+        *ngIf="hasErrorSub('nombre', 'required')"
+        class="text-xs text-red-500 mt-1 flex items-center gap-1"
+      >
+        <i class="pi pi-exclamation-triangle text-xs"></i>
+        Campo obligatorio
+      </p>
+    </div>
+
+    <div class="flex gap-3 justify-end">
+      <button
+        type="button"
+        (click)="modalSubcategoriaVisible = false"
+        class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        [disabled]="formSubCategory.invalid || saving"
+        class="px-4 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Crear subcategoría
+      </button>
+    </div>
+  </form>
+</p-dialog>
+
+<!-- ══ Modal — Mover subcategoría ════════════════════════════════════════ -->
+<p-dialog
+  header="Mover subcategoría"
+  [modal]="true"
+  [visible]="subAMover !== null"
+  (visibleChange)="!$event && (subAMover = null)"
+  [style]="{ width: '26rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  @if (subAMover) {
+    <div class="pt-2">
+      <p class="text-xs text-gray-400 mb-5">
+        Mové <span class="font-semibold text-black">{{ subAMover.nombre }}</span>
+        y sus productos a otra categoría.
+      </p>
+      <label for="destino" class="block text-sm font-semibold text-black mb-1.5">
+        Categoría destino
+      </label>
+      <select
+        id="destino"
+        [(ngModel)]="destinoCategoryId"
+        class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-6 focus:outline-none focus:ring-2 focus:ring-black"
+      >
+        <option [ngValue]="null" disabled>Elegí una categoría</option>
+        @for (c of categoriasDestino; track c.idCategory) {
+          <option [ngValue]="c.idCategory">{{ c.nameCategory }}</option>
+        }
+      </select>
+      <div class="flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="subAMover = null"
+          class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmarMover()"
+          [disabled]="destinoCategoryId === null || saving"
+          class="px-4 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Mover
+        </button>
+      </div>
+    </div>
+  }
+</p-dialog>

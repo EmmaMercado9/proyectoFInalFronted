@@ -1,0 +1,605 @@
+<!-- order-list.component.html -->
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <!-- ══ Cabecera ══════════════════════════════════════════════════════════ -->
+  <div
+    class="max-w-6xl mx-auto pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
+  >
+    <div>
+      <h2 class="text-xl font-bold text-black">Órdenes</h2>
+      <p class="text-xs text-gray-400 mt-0.5">
+        {{ totalElementos }} orden{{ totalElementos !== 1 ? 'es' : '' }} en
+        total
+      </p>
+    </div>
+  </div>
+
+  <!-- ══ Métricas ══════════════════════════════════════════════════════════ -->
+  <div class="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="bg-white border border-gray-200 rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs text-gray-400">Total órdenes</p>
+        <div
+          class="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center"
+        >
+          <i class="pi pi-list text-[10px] text-gray-500"></i>
+        </div>
+      </div>
+      <p class="text-2xl font-bold text-black">{{ totalOrdenes }}</p>
+    </div>
+
+    <div class="bg-white border border-green-100 rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs text-gray-400">Completadas</p>
+        <div
+          class="w-6 h-6 rounded-lg bg-green-50 flex items-center justify-center"
+        >
+          <i class="pi pi-check-circle text-[10px] text-green-500"></i>
+        </div>
+      </div>
+      <p class="text-2xl font-bold text-green-600">{{ completadas }}</p>
+    </div>
+
+    <div class="bg-white border border-red-100 rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs text-gray-400">Canceladas</p>
+        <div
+          class="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center"
+        >
+          <i class="pi pi-times-circle text-[10px] text-red-500"></i>
+        </div>
+      </div>
+      <p class="text-2xl font-bold text-red-500">{{ canceladas }}</p>
+      <p *ngIf="conDevolucion" class="text-[11px] text-orange-600 mt-0.5">
+        {{ conDevolucion }} con devolución
+      </p>
+    </div>
+
+    <div class="bg-white border border-gray-200 rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs text-gray-400">Venta total</p>
+        <div
+          class="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center"
+        >
+          <i class="pi pi-dollar text-[10px] text-gray-500"></i>
+        </div>
+      </div>
+      <p class="text-lg font-bold text-black">
+        ${{ ventaTotal | number: '1.0-0' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- ══ Filtros ════════════════════════════════════════════════════════════ -->
+  <div
+    class="max-w-6xl mx-auto bg-white border border-gray-200 rounded-2xl p-4 mb-4"
+  >
+    <div class="flex flex-col sm:flex-row gap-3">
+      <select
+        [(ngModel)]="statusFiltro"
+        (ngModelChange)="onFiltroChange()"
+        class="border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700"
+      >
+        <option value="">Todos los estados</option>
+        <option value="COMPLETADA">Completadas</option>
+        <option value="PENDIENTE">Pendientes</option>
+        <option value="CANCELADA">Canceladas</option>
+        <option value="EN_ENVIO">En envío</option>
+        <option value="DEVUELTA_PARCIAL">Devolución parcial</option>
+        <option value="DEVUELTA">Devueltas</option>
+      </select>
+
+      <select
+        [(ngModel)]="canalFiltro"
+        (ngModelChange)="onFiltroChange()"
+        class="border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700"
+      >
+        <option value="">Todos los canales</option>
+        <option value="ADMIN">Mostrador</option>
+        <option value="ONLINE">Online</option>
+      </select>
+
+      <button
+        *ngIf="statusFiltro || canalFiltro"
+        (click)="limpiarFiltros()"
+        class="px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition flex items-center gap-1.5"
+      >
+        <i class="pi pi-times text-xs"></i>
+        Limpiar
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ Contenido ══════════════════════════════════════════════════════════ -->
+  <div class="max-w-6xl mx-auto">
+    <!-- Loading -->
+    <div
+      *ngIf="isLoading"
+      class="bg-white border border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center gap-3"
+    >
+      <i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i>
+      <p class="text-sm text-gray-400">Cargando órdenes...</p>
+    </div>
+
+    <!-- Sin resultados -->
+    <div
+      *ngIf="!isLoading && ordenesFiltradas.length === 0"
+      class="bg-white border border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center"
+    >
+      <i class="pi pi-shopping-bag text-5xl text-gray-200 mb-4"></i>
+      <p class="text-base font-semibold text-gray-400 mb-1">No hay órdenes</p>
+      <p class="text-sm text-gray-300 mb-5">Todavía no se registraron ventas</p>
+    </div>
+
+    <!-- ── Vista desktop: tabla ──────────────────────────────────────────── -->
+    <div
+      *ngIf="!isLoading && ordenesFiltradas.length > 0"
+      class="hidden sm:block bg-white border border-gray-200 rounded-2xl overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table
+          class="w-full text-sm text-left border-collapse"
+          style="min-width: 700px"
+        >
+          <thead
+            class="text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-gray-50"
+          >
+            <tr>
+              <th class="px-5 py-3.5 w-28">Orden</th>
+              <th class="px-5 py-3.5">Cliente</th>
+              <th class="px-5 py-3.5 w-28">Fecha</th>
+              <th class="px-5 py-3.5 w-24">Canal</th>
+              <th class="px-5 py-3.5 w-28">Pago</th>
+              <th class="px-5 py-3.5 w-20 text-center">Items</th>
+              <th class="px-5 py-3.5 w-28">Total</th>
+              <th class="px-5 py-3.5 w-28">Estado</th>
+              <th class="px-5 py-3.5 w-12"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr
+              *ngFor="let o of ordenesFiltradas"
+              class="hover:bg-gray-50 transition group"
+            >
+              <!-- Tracking -->
+              <td class="px-5 py-3.5">
+                <span class="font-mono text-xs font-bold text-black">
+                  #{{ o.trackingId.toString().slice(0, 8).toUpperCase() }}
+                </span>
+              </td>
+
+              <!-- Cliente -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2">
+                  <!-- Avatar inicial -->
+                  <div
+                    class="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0"
+                    [class.bg-blue-50]="!!o.cliente?.name"
+                  >
+                    <span
+                      class="text-xs font-bold"
+                      [class.text-gray-400]="!o.cliente?.name"
+                      [class.text-blue-600]="!!o.cliente?.name"
+                    >
+                      {{ o.cliente?.name?.charAt(0)?.toUpperCase() ?? '—' }}
+                    </span>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-black truncate">
+                      {{ nombreCliente(o) }}
+                    </p>
+                    <p
+                      *ngIf="o.cliente?.mail"
+                      class="text-xs text-gray-400 truncate"
+                    >
+                      {{ o.cliente!.mail }}
+                    </p>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Fecha -->
+              <td class="px-5 py-3.5">
+                <p class="text-xs text-gray-600">
+                  {{ formatFecha(o.orderDate) }}
+                </p>
+              </td>
+
+              <!-- Canal -->
+              <td class="px-5 py-3.5">
+                <span
+                  class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  [class.bg-gray-100]="o.canal === 'ADMIN'"
+                  [class.text-gray-600]="o.canal === 'ADMIN'"
+                  [class.bg-blue-50]="o.canal !== 'ADMIN'"
+                  [class.text-blue-600]="o.canal !== 'ADMIN'"
+                >
+                  {{ getCanalLabel(o.canal) }}
+                </span>
+              </td>
+
+              <!-- Pago -->
+              <td class="px-5 py-3.5">
+                <span class="text-xs text-gray-600">{{
+                  getPaymentLabel(o.payment)
+                }}</span>
+              </td>
+
+              <!-- Items -->
+              <td class="px-5 py-3.5 text-center">
+                <span
+                  class="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full"
+                >
+                  {{ o.cantidadItems }}
+                </span>
+              </td>
+
+              <!-- Total -->
+              <td class="px-5 py-3.5">
+                <span class="text-sm font-bold text-black"
+                  >${{ o.totalAmount | number: '1.0-0' }}</span
+                >
+              </td>
+
+              <!-- Estado -->
+              <td class="px-5 py-3.5">
+                <span
+                  class="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  [class]="getStatusClass(o.status)"
+                >
+                  {{ getStatusLabel(o.status) }}
+                </span>
+              </td>
+
+              <!-- Ver detalle -->
+              <td class="px-5 py-3.5">
+                <button
+                  (click)="verDetalle(o)"
+                  class="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition opacity-0 group-hover:opacity-100"
+                  title="Ver detalle"
+                >
+                  <i class="pi pi-eye text-xs"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div
+        *ngIf="totalPaginas > 1"
+        class="flex items-center justify-between px-5 py-3.5 border-t border-gray-100"
+      >
+        <p class="text-xs text-gray-400">
+          Página {{ page + 1 }} de {{ totalPaginas }} ·
+          {{ totalElementos }} órdenes
+        </p>
+        <div class="flex items-center gap-1">
+          <button
+            (click)="irPagina(page - 1)"
+            [disabled]="page === 0"
+            class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <i class="pi pi-chevron-left text-xs"></i>
+          </button>
+          <button
+            *ngFor="let pg of paginas"
+            (click)="irPagina(pg)"
+            class="w-8 h-8 rounded-lg text-xs font-medium transition"
+            [class.bg-black]="pg === page"
+            [class.text-white]="pg === page"
+            [class.text-gray-600]="pg !== page"
+            [class.hover:bg-gray-100]="pg !== page"
+          >
+            {{ pg + 1 }}
+          </button>
+          <button
+            (click)="irPagina(page + 1)"
+            [disabled]="page >= totalPaginas - 1"
+            class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <i class="pi pi-chevron-right text-xs"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Vista mobile: tarjetas ─────────────────────────────────────────── -->
+    <div
+      *ngIf="!isLoading && ordenesFiltradas.length > 0"
+      class="sm:hidden space-y-3"
+    >
+      <div
+        *ngFor="let o of ordenesFiltradas"
+        class="bg-white border border-gray-200 rounded-2xl p-4"
+      >
+        <!-- Cabecera tarjeta -->
+        <div class="flex items-start justify-between gap-3 mb-3">
+          <div>
+            <span class="font-mono text-sm font-bold text-black">
+              #{{ o.trackingId.toString().slice(0, 8).toUpperCase() }}
+            </span>
+            <p class="text-xs text-gray-400 mt-0.5">
+              {{ formatFecha(o.orderDate) }}
+            </p>
+          </div>
+          <span
+            class="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+            [class]="getStatusClass(o.status)"
+          >
+            {{ getStatusLabel(o.status) }}
+          </span>
+        </div>
+
+        <!-- Info -->
+        <div class="space-y-1.5 mb-3">
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Cliente</span>
+            <div class="text-right">
+              <span class="font-medium text-black">{{ nombreCliente(o) }}</span>
+              <p *ngIf="o.cliente?.mail" class="text-gray-400 text-[10px]">
+                {{ o.cliente!.mail }}
+              </p>
+            </div>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Canal</span>
+            <span class="font-medium text-gray-700">{{
+              getCanalLabel(o.canal)
+            }}</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Pago</span>
+            <span class="font-medium text-gray-700">{{
+              getPaymentLabel(o.payment)
+            }}</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Items</span>
+            <span class="font-medium text-gray-700">{{ o.cantidadItems }}</span>
+          </div>
+        </div>
+
+        <!-- Total y acción -->
+        <div
+          class="flex items-center justify-between pt-3 border-t border-gray-100"
+        >
+          <span class="text-base font-bold text-black"
+            >${{ o.totalAmount | number: '1.0-0' }}</span
+          >
+          <button
+            (click)="verDetalle(o)"
+            class="flex items-center gap-1.5 px-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition"
+          >
+            <i class="pi pi-eye text-xs"></i>
+            Ver detalle
+          </button>
+        </div>
+      </div>
+
+      <!-- Paginación mobile -->
+      <div
+        *ngIf="totalPaginas > 1"
+        class="flex items-center justify-between pt-2"
+      >
+        <button
+          (click)="irPagina(page - 1)"
+          [disabled]="page === 0"
+          class="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <i class="pi pi-chevron-left text-xs"></i>
+          Anterior
+        </button>
+        <span class="text-xs text-gray-400"
+          >{{ page + 1 }} / {{ totalPaginas }}</span
+        >
+        <button
+          (click)="irPagina(page + 1)"
+          [disabled]="page >= totalPaginas - 1"
+          class="flex items-center gap-1.5 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          Siguiente
+          <i class="pi pi-chevron-right text-xs"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ Panel lateral detalle orden ═══════════════════════════════════════ -->
+@if (mostrarDetalle && ordenSeleccionada) {
+  <div
+    class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+    (click)="mostrarDetalle = false"
+  ></div>
+
+  <aside
+    class="fixed top-0 right-0 h-full z-50 w-full sm:w-96 bg-white shadow-2xl flex flex-col"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Cabecera panel -->
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+      <button
+        (click)="mostrarDetalle = false"
+        class="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition"
+      >
+        <i class="pi pi-times text-sm"></i>
+      </button>
+      <div class="flex-1 min-w-0">
+        <h2 class="text-base font-bold text-black">Detalle de orden</h2>
+        <p class="text-xs font-mono text-gray-400 mt-0.5">
+          #{{
+            ordenSeleccionada.trackingId.toString().slice(0, 8).toUpperCase()
+          }}
+        </p>
+      </div>
+      <span
+        class="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+        [class]="getStatusClass(ordenSeleccionada.status)"
+      >
+        {{ getStatusLabel(ordenSeleccionada.status) }}
+      </span>
+    </div>
+
+    <!-- Contenido panel -->
+    <div class="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+      <!-- ── Cliente ──────────────────────────────────────────────────────── -->
+      <div class="bg-gray-50 rounded-2xl p-4">
+        <p class="text-xs font-bold text-black uppercase tracking-wide mb-3">
+          Cliente
+        </p>
+
+        @if (ordenSeleccionada.cliente) {
+          <!-- Con cliente registrado -->
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0"
+            >
+              <span class="text-sm font-bold text-blue-600">
+                {{ ordenSeleccionada.cliente.name.charAt(0).toUpperCase() }}
+              </span>
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold text-black">
+                {{ ordenSeleccionada.cliente.name }}
+              </p>
+              <p
+                *ngIf="ordenSeleccionada.cliente.mail"
+                class="text-xs text-gray-400 truncate mt-0.5"
+              >
+                {{ ordenSeleccionada.cliente!.mail }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Datos extra del cliente -->
+          <div class="mt-3 space-y-2 border-t border-gray-200 pt-3">
+            <div
+              *ngIf="ordenSeleccionada.cliente.dni"
+              class="flex justify-between text-xs"
+            >
+              <span class="text-gray-400">DNI</span>
+              <span class="font-medium text-black">{{
+                ordenSeleccionada.cliente!.dni
+              }}</span>
+            </div>
+            <div
+              *ngIf="ordenSeleccionada.cliente.mail"
+              class="flex justify-between text-xs"
+            >
+              <span class="text-gray-400">Email</span>
+              <span class="font-medium text-black truncate max-w-[160px]">{{
+                ordenSeleccionada.cliente!.mail
+              }}</span>
+            </div>
+          </div>
+        } @else {
+          <!-- Sin cliente (venta mostrador) -->
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0"
+            >
+              <i class="pi pi-user text-gray-400 text-sm"></i>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-500">Venta mostrador</p>
+              <p class="text-xs text-gray-400">Sin cliente registrado</p>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- ── Info general ────────────────────────────────────────────────── -->
+      <div class="bg-gray-50 rounded-2xl p-4 space-y-3">
+        <p class="text-xs font-bold text-black uppercase tracking-wide mb-3">
+          Información
+        </p>
+
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-400">Fecha</span>
+          <span class="font-medium text-black">{{
+            formatFecha(ordenSeleccionada.orderDate)
+          }}</span>
+        </div>
+
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-400">Canal</span>
+          <span class="font-medium text-black">{{
+            getCanalLabel(ordenSeleccionada.canal)
+          }}</span>
+        </div>
+
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-400">Método de pago</span>
+          <span class="font-medium text-black">{{
+            getPaymentLabel(ordenSeleccionada.payment)
+          }}</span>
+        </div>
+
+        <div class="flex justify-between text-sm">
+          <span class="text-gray-400">Items</span>
+          <span class="font-medium text-black">{{
+            ordenSeleccionada.cantidadItems
+          }}</span>
+        </div>
+      </div>
+
+      <!-- ── Total ───────────────────────────────────────────────────────── -->
+      <div class="bg-black rounded-2xl p-4 flex items-center justify-between">
+        <p class="text-sm font-semibold text-white">Total</p>
+        <p class="text-xl font-bold text-white">
+          ${{ ordenSeleccionada.totalAmount | number: '1.0-0' }}
+        </p>
+      </div>
+
+      <!-- ── Tracking ID completo ───────────────────────────────────────── -->
+      <div class="border border-gray-100 rounded-2xl p-4">
+        <p class="text-xs font-bold text-black uppercase tracking-wide mb-2">
+          Número de seguimiento
+        </p>
+        <p class="font-mono text-xs text-gray-500 break-all">
+          {{ ordenSeleccionada.trackingId }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer panel -->
+    <div class="px-5 py-4 border-t border-gray-100 space-y-2">
+      <a
+        *ngIf="puedeDevolver(ordenSeleccionada)"
+        [routerLink]="['/admin/orders', ordenSeleccionada.trackingId, 'devolucion']"
+        class="w-full py-3 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition flex items-center justify-center gap-2"
+      >
+        <i class="pi pi-replay text-sm"></i>
+        Devolver o cambiar
+      </a>
+      <button
+        *ngIf="puedeCancelar && ordenSeleccionada.status === 'COMPLETADA'"
+        type="button"
+        (click)="aCancelar = ordenSeleccionada"
+        class="w-full py-3 border border-red-200 text-red-500 text-sm font-semibold rounded-xl hover:bg-red-50 transition flex items-center justify-center gap-2"
+      >
+        <i class="pi pi-times-circle text-sm"></i>
+        Cancelar venta
+      </button>
+      <a
+        [routerLink]="['/admin/comprobante', ordenSeleccionada.trackingId]"
+        class="w-full py-3 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition flex items-center justify-center gap-2"
+      >
+        <i class="pi pi-receipt text-sm"></i>
+        Ver comprobante
+      </a>
+      <button
+        (click)="mostrarDetalle = false"
+        class="w-full py-3 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition"
+      >
+        Cerrar
+      </button>
+    </div>
+  </aside>
+}
+
+<app-cancelar-orden
+  [(orden)]="aCancelar"
+  (cancelada)="onCancelada($event)"
+></app-cancelar-orden>

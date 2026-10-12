@@ -1,0 +1,97 @@
+<section class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-gray-100 flex shadow-xl max-w-4xl w-full rounded-xl overflow-hidden">
+    <div class="sm:block hidden w-3/5">
+      <img class="h-full w-full object-cover" src="assets/images/pag.png" alt="ERP" />
+    </div>
+    <div class="w-full sm:w-2/5 px-8 py-12 sm:px-12 sm:py-20">
+      <div class="block sm:hidden mb-4 text-center">
+        <img
+          src="assets/logo_hustle-1.png"
+          alt="Logo"
+          class="w-32 mx-auto rounded-xl"
+        />
+      </div>
+      <h1 class="font-bold text-2xl text-[#002D74]">¡Hola! 👋</h1>
+      <p class="text-sm mt-4 text-[#002D74]">
+        Ingresá tu email y contraseña para iniciar sesión.
+      </p>
+
+      <form
+        [formGroup]="formUser"
+        (ngSubmit)="onLogin()"
+        class="flex flex-col gap-4"
+        novalidate
+      >
+        <!-- Correo -->
+        <div class="flex flex-col">
+          <label for="email" class="text-gray-700 mt-8 text-xs">Email</label>
+          <input
+            id="email"
+            class="p-2 mt-0 rounded-xl border"
+            type="email"
+            autocomplete="username"
+            formControlName="email"
+            placeholder="ejemplo@tumail.com"
+            [class.border-red-500]="
+              hasError('email', 'required') || hasError('email', 'email')
+            "
+          />
+          @if (hasError('email', 'required')) {
+            <span class="text-red-600 mt-1 text-xs">
+              <i class="pi pi-exclamation-triangle"></i> Campo requerido
+            </span>
+          } @else if (hasError('email', 'email')) {
+            <span class="text-red-600 mt-1 text-xs">
+              <i class="pi pi-exclamation-triangle"></i> Email inválido
+            </span>
+          }
+        </div>
+
+        <!-- Contraseña -->
+        <div class="flex flex-col">
+          <label for="password" class="text-gray-700 text-xs">Contraseña</label>
+          <div class="relative">
+            <input
+              id="password"
+              [type]="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              formControlName="password"
+              placeholder="••••••••"
+              class="p-2 pr-10 w-full rounded-xl border"
+              [class.border-red-500]="hasError('password', 'required')"
+            />
+            <button
+              type="button"
+              (click)="togglePassword()"
+              [attr.aria-label]="
+                showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'
+              "
+              class="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <i [class]="showPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
+            </button>
+          </div>
+          @if (hasError('password', 'required')) {
+            <span class="text-red-600 mt-1 text-xs">
+              <i class="pi pi-exclamation-triangle"></i> Campo requerido
+            </span>
+          }
+        </div>
+
+        <!-- Botón -->
+        <button
+          type="submit"
+          [disabled]="loading"
+          class="bg-[#002D74] rounded-xl text-white py-2 mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (loading) {
+            <i class="pi pi-spin pi-spinner"></i>
+            Ingresando...
+          } @else {
+            Ingresar
+          }
+        </button>
+      </form>
+    </div>
+  </div>
+</section>

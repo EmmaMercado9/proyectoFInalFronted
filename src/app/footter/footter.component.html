@@ -1,0 +1,76 @@
+<!-- Footer-->
+<footer class="py-5 bg-dark">
+  <div class="container bg-dark">
+    <p class="m-0 text-center text-white">Copyright &copy; Your Website 2023</p>
+
+    <div></div>
+    <a
+      style="color: aliceblue"
+      data-bs-toggle="modal"
+      data-bs-target="#mi-inicio"
+      class="poin"
+      >Inicia Session Administrador</a
+    >
+  </div>
+  <div class="container py-4 mobile">
+    <div class="modal fade" id="mi-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Registrarse</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form></form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-primary">Ingresar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container py-4 mobile">
+    <div class="modal fade" id="mi-inicio">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Iniciar Session</h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form [formGroup]="formUser">
+              <div class="mb-3">
+                <label for="input" class="form-label">Nombre de Usuario</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="input"
+                  aria-describedby="text"
+                  formControlName="email"
+                  placeholder="Ingrese su nombre de Usuario"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="exampleInputPassword1" class="form-label"
+                  >Contraseña</label
+                >
+                <input
+                  type="password"
+                  class="form-control"
+                  id="exampleInputPassword1"
+                  placeholder="Ingrese su contraseña"
+                  formControlName="password"
+                />
+              </div>
+
+              <button type="submit" class="btn btn-primary" (click)="onLogin()">
+                Ingresar
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,73 @@
+<div class="slider-box">
+  <ul>
+    <li>
+      <img src="../assets/images/s1.jpg" alt="" />
+      <div class="textos">
+        <h2>Imagen 1</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed consequat
+          libero vel neque rutrum, vel ullamcorper nunc scelerisque. Sed id
+          pellentesque felis.
+        </p>
+      </div>
+    </li>
+
+    <li>
+      <img src="../assets/images/s2.jpg" alt="" />
+      <div class="textos">
+        <h2>Imagen 1</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed consequat
+          libero vel neque rutrum, vel ullamcorper nunc scelerisque. Sed id
+          pellentesque felis.
+        </p>
+      </div>
+    </li>
+    <li>
+      <img src="../assets/images/s3.jpg" alt="" />
+      <div class="textos">
+        <h2>Imagen 1</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed consequat
+          libero vel neque rutrum, vel ullamcorper nunc scelerisque. Sed id
+          pellentesque felis.
+        </p>
+      </div>
+    </li>
+    <li>
+      <img src="../assets/images/s4.jpg" alt="" />
+      <div class="textos">
+        <h2>Imagen 1</h2>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed consequat
+          libero vel neque rutrum, vel ullamcorper nunc scelerisque. Sed id
+          pellentesque felis.
+        </p>
+      </div>
+    </li>
+  </ul>
+</div>
+
+<div class="container mt-2 mb-4" style="cursor: pointer">
+  <div class="row">
+    @for (item of listProducts; track item.idProduct) {
+      <div class="col-sm-3 mt-1">
+        <div class="card">
+          <img [src]="item.images[0].url" class="logo" />
+
+          <div class="card-body">
+            <p class="fw-bold text-center">{{ item.nameProduct }}</p>
+            <div
+              class="d-flex justify-content-between align-items-center"
+            ></div>
+            <button type="button" class="btn btn-sm btn-dark">
+              <i class="fa fa-shopping-cart">Ver</i>
+            </button>
+            <small class="fw-bold">S/{{ item.priceUnitary }}</small>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+<app-footter></app-footter>

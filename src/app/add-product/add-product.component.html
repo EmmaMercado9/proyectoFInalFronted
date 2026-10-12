@@ -1,0 +1,1166 @@
+<!-- add-product.component.html -->
+<section class="min-h-screen w-full bg-gray-50 pb-16 px-4">
+  <form [formGroup]="formProduct" (ngSubmit)="onSubmit()">
+    <!-- ══ Header ════════════════════════════════════════════════════════════ -->
+    <div class="max-w-3xl mx-auto pt-6 mb-4 flex items-center gap-3">
+      <button
+        type="button"
+        routerLink="/admin/products"
+        class="p-2 rounded-xl hover:bg-gray-200 text-gray-500 transition"
+      >
+        <i class="pi pi-arrow-left text-sm"></i>
+      </button>
+      <div>
+        <h2 class="text-xl font-bold text-black">
+          {{ edit ? 'Editar producto' : 'Nuevo producto' }}
+        </h2>
+        <p class="text-xs text-gray-400 mt-0.5">
+          {{
+            edit
+              ? 'Modificá los datos del producto'
+              : 'Completá los datos para agregar un producto al catálogo'
+          }}
+        </p>
+      </div>
+    </div>
+
+    <!-- ══ Datos generales ════════════════════════════════════════════════ -->
+    <div
+      class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-6 mb-4"
+    >
+      <div class="flex items-center gap-2 mb-5">
+        <div
+          class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center"
+        >
+          <i class="pi pi-box text-xs text-gray-500"></i>
+        </div>
+        <h3 class="text-sm font-bold text-black">Datos generales</h3>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <!-- Nombre -->
+        <div class="sm:col-span-2">
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Nombre del producto <span class="text-red-500">*</span>
+          </label>
+          <input
+            formControlName="nameProduct"
+            type="text"
+            placeholder="Ej: Zapatilla de cuero negra"
+            class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            [class.border-red-400]="hasError('nameProduct', 'required')"
+            [class.border-gray-200]="!hasError('nameProduct', 'required')"
+          />
+          <p
+            *ngIf="hasError('nameProduct', 'required')"
+            class="text-xs text-red-500 mt-1 flex items-center gap-1"
+          >
+            <i class="pi pi-exclamation-triangle text-xs"></i> Campo obligatorio
+          </p>
+        </div>
+
+        <!-- Marca -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Marca <span class="text-red-500">*</span>
+          </label>
+          <input
+            formControlName="marca"
+            type="text"
+            placeholder="Nike"
+            class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            [class.border-red-400]="hasError('marca', 'required')"
+            [class.border-gray-200]="!hasError('marca', 'required')"
+          />
+          <p
+            *ngIf="hasError('marca', 'required')"
+            class="text-xs text-red-500 mt-1 flex items-center gap-1"
+          >
+            <i class="pi pi-exclamation-triangle text-xs"></i> Campo obligatorio
+          </p>
+        </div>
+
+        <!-- Modelo -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Modelo
+          </label>
+          <input
+            formControlName="modelo"
+            type="text"
+            placeholder="Air Max 270"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+          />
+        </div>
+
+        <!-- SKU -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            SKU
+          </label>
+          <input
+            formControlName="sku"
+            type="text"
+            placeholder="NIKE-AM-270"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
+          />
+        </div>
+
+        <!-- Código de barra -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Código de barra
+          </label>
+          <input
+            formControlName="codigoBarra"
+            type="text"
+            placeholder="7791234567890"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
+          />
+        </div>
+
+        <!-- Categoría -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Categoría
+          </label>
+          <select
+            (change)="onCategoryChange($event)"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition"
+          >
+            <option value="" disabled [selected]="categoriaSeleccionadaId === null">
+              Seleccioná una categoría
+            </option>
+            <option
+              *ngFor="let cat of listCategory"
+              [value]="cat.idCategory"
+              [selected]="cat.idCategory === categoriaSeleccionadaId"
+            >
+              {{ cat.nameCategory }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Subcategoría -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Subcategoría
+          </label>
+          <select
+            formControlName="subCategoriaId"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition"
+          >
+            <option [ngValue]="null" disabled>Seleccioná subcategoría</option>
+            <option *ngFor="let sub of subCategories" [ngValue]="sub.subId">
+              {{ sub.nombre }}{{ sub.status !== 'ACTIVO' ? ' (inactiva)' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Descripción -->
+        <div class="sm:col-span-2">
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Descripción
+          </label>
+          <textarea
+            formControlName="description"
+            rows="3"
+            placeholder="Describí el producto brevemente..."
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none transition"
+          >
+          </textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Toggle variantes ═══════════════════════════════════════════════ -->
+    <div
+      class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mb-4"
+    >
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center"
+          >
+            <i class="pi pi-clone text-xs text-gray-500"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-black">¿Tiene variantes?</h3>
+            <p class="text-xs text-gray-400 mt-0.5">
+              Activá si tiene tallas, colores u otras combinaciones
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="toggleVariantes()"
+          [disabled]="edit"
+          [title]="edit ? 'No se puede cambiar en un producto existente' : ''"
+          class="relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+          [class.bg-black]="tieneVariantes"
+          [class.bg-gray-200]="!tieneVariantes"
+        >
+          <span
+            class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+            [class.translate-x-6]="tieneVariantes"
+            [class.translate-x-0.5]="!tieneVariantes"
+          >
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ Fotos — solo sin variantes ════════════════════════════════════ -->
+    <div
+      *ngIf="!tieneVariantes"
+      class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-6 mb-4"
+    >
+      <div class="flex items-center gap-2 mb-4">
+        <div
+          class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center"
+        >
+          <i class="pi pi-images text-xs text-gray-500"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-black">Fotos del producto</h3>
+          <p class="text-xs text-gray-400 mt-0.5">
+            La primera foto es la principal
+          </p>
+        </div>
+      </div>
+
+      <p *ngIf="edit" class="text-xs text-gray-400 mb-3">
+        Las fotos de un producto existente no se pueden cambiar desde acá.
+      </p>
+      <div
+        *ngIf="!edit"
+        (click)="fileInput.click()"
+        class="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 cursor-pointer hover:border-black hover:bg-gray-100 transition select-none"
+      >
+        <i class="pi pi-upload text-xl text-gray-400 mb-1.5"></i>
+        <p class="text-sm text-gray-600 font-medium">Tocá para subir fotos</p>
+        <p class="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP · Máx 2MB</p>
+        <input
+          #fileInput
+          type="file"
+          class="hidden"
+          multiple
+          accept="image/jpeg,image/png,image/webp"
+          (change)="onFilesSelected($event)"
+        />
+      </div>
+
+      <div
+        *ngIf="selectedPreviews.length > 0"
+        class="grid grid-cols-4 sm:grid-cols-6 gap-2 mt-4"
+      >
+        <div
+          *ngFor="let img of selectedPreviews; let i = index"
+          class="relative group aspect-square"
+        >
+          <img
+            [src]="img"
+            alt="preview"
+            class="w-full h-full object-cover rounded-xl border border-gray-100"
+          />
+          <span
+            *ngIf="i === 0"
+            class="absolute top-1 left-1 bg-black text-white text-[9px] px-1.5 py-0.5 rounded-full"
+          >
+            Principal
+          </span>
+          <button
+            *ngIf="!edit"
+            type="button"
+            (click)="removeImage(i)"
+            class="absolute top-1 right-1 bg-white text-red-500 rounded-full w-5 h-5 flex items-center justify-center text-xs shadow opacity-0 group-hover:opacity-100 transition border border-gray-100"
+          >
+            <i class="pi pi-times" style="font-size: 9px"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso fotos con variantes -->
+    <div
+      *ngIf="tieneVariantes"
+      class="max-w-3xl mx-auto bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4 flex items-start gap-3"
+    >
+      <i
+        class="pi pi-info-circle text-blue-500 text-sm mt-0.5 flex-shrink-0"
+      ></i>
+      <div>
+        <p class="text-sm font-semibold text-blue-800">
+          Las fotos van por variante
+        </p>
+        <p class="text-xs text-blue-600 mt-0.5">
+          Subí las fotos en cada fila de la tabla de variantes de abajo.
+        </p>
+      </div>
+    </div>
+
+    <!-- ══ Precios y stock — sin variantes ═══════════════════════════════ -->
+    <div
+      *ngIf="!tieneVariantes"
+      class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-6 mb-4"
+    >
+      <div class="flex items-center gap-2 mb-5">
+        <div
+          class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center"
+        >
+          <i class="pi pi-dollar text-xs text-gray-500"></i>
+        </div>
+        <h3 class="text-sm font-bold text-black">Precios y stock</h3>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <!-- Precio venta -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Precio venta <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span
+              class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 text-sm pointer-events-none"
+              >$</span
+            >
+            <input
+              formControlName="precioVenta"
+              type="number"
+              min="0"
+              placeholder="0"
+              class="w-full border rounded-xl pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+              [class.border-red-400]="hasError('precioVenta', 'required')"
+              [class.border-gray-200]="!hasError('precioVenta', 'required')"
+            />
+          </div>
+        </div>
+
+        <!-- Precio promo -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Precio promo
+          </label>
+          <div class="relative">
+            <span
+              class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 text-sm pointer-events-none"
+              >$</span
+            >
+            <input
+              formControlName="precioPro"
+              type="number"
+              min="0"
+              placeholder="0"
+              class="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+            />
+          </div>
+        </div>
+
+        <!-- Costo -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Costo <span class="text-red-500">*</span>
+          </label>
+          <div class="relative">
+            <span
+              class="absolute inset-y-0 left-3.5 flex items-center text-gray-400 text-sm pointer-events-none"
+              >$</span
+            >
+            <input
+              formControlName="costo"
+              type="number"
+              min="0"
+              placeholder="0"
+              class="w-full border rounded-xl pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+              [class.border-red-400]="hasError('costo', 'required')"
+              [class.border-gray-200]="!hasError('costo', 'required')"
+            />
+          </div>
+        </div>
+
+        <!-- Margen -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Margen
+          </label>
+          <div
+            class="w-full border border-gray-100 rounded-xl px-3.5 py-2.5 text-sm bg-gray-50 text-gray-700 font-semibold min-h-[42px] flex items-center gap-1"
+          >
+            {{ margen !== null ? margen : '—' }}
+            <span
+              *ngIf="margen !== null"
+              class="text-xs font-normal text-gray-400"
+              >%</span
+            >
+          </div>
+        </div>
+
+        <!-- Stock inicial -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            {{ edit ? 'Stock actual' : 'Stock inicial' }}
+          </label>
+          <input
+            formControlName="stockInicial"
+            type="number"
+            min="0"
+            placeholder="0"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+          />
+        </div>
+
+        <!-- Stock mínimo -->
+        <div>
+          <label
+            class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+          >
+            Stock mínimo
+          </label>
+          <input
+            formControlName="stockMinimo"
+            type="number"
+            min="0"
+            placeholder="5"
+            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Variantes ══════════════════════════════════════════════════════ -->
+    <div
+      *ngIf="tieneVariantes"
+      class="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-6 mb-4"
+    >
+      <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center gap-2">
+          <div
+            class="w-7 h-7 rounded-lg bg-gray-100 flex items-center justify-center"
+          >
+            <i class="pi pi-th-large text-xs text-gray-500"></i>
+          </div>
+          <h3 class="text-sm font-bold text-black">Variantes</h3>
+        </div>
+        <button
+          type="button"
+          (click)="visiblePropiedadModal = true"
+          class="flex items-center gap-1.5 text-xs font-semibold text-black border border-gray-200 rounded-xl px-3 py-1.5 hover:bg-gray-50 transition"
+        >
+          <i class="pi pi-sliders-h text-xs"></i>
+          Configurar variantes
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mb-4 ml-9">
+        Elegí atributos para generar las combinaciones. Cada variante lleva su
+        propio precio de venta y costo.
+      </p>
+
+      <!-- Empty state -->
+      <div
+        *ngIf="listVariants.length === 0"
+        class="flex flex-col items-center justify-center py-10 border-2 border-dashed border-gray-200 rounded-2xl text-center"
+      >
+        <i class="pi pi-th-large text-3xl text-gray-200 mb-2"></i>
+        <p class="text-sm text-gray-400">Todavía no hay variantes.</p>
+        <button
+          type="button"
+          (click)="visiblePropiedadModal = true"
+          class="mt-3 px-4 py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition"
+        >
+          Configurar variantes
+        </button>
+      </div>
+
+      <!-- Tabla -->
+      <div *ngIf="listVariants.length > 0">
+        <div class="flex items-center gap-2 mb-3">
+          <span
+            class="bg-black text-white text-xs font-semibold px-2.5 py-1 rounded-full"
+          >
+            {{ listVariants.length }}
+            variante{{ listVariants.length !== 1 ? 's' : '' }}
+          </span>
+          <button
+            type="button"
+            (click)="limpiarVariantes()"
+            class="text-xs text-red-400 hover:text-red-600 transition"
+          >
+            Limpiar todo
+          </button>
+        </div>
+
+        <!-- Completar todas las variantes de una vez -->
+        <div
+          class="flex flex-wrap items-end gap-2 mb-3 p-3 bg-gray-50 border border-gray-100 rounded-xl"
+        >
+          <div>
+            <label for="bulkPrecio" class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">
+              Precio venta
+            </label>
+            <input
+              id="bulkPrecio"
+              type="number"
+              min="0"
+              [(ngModel)]="bulkPrecio"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="$"
+              class="w-28 border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-black"
+            />
+          </div>
+          <div>
+            <label for="bulkCosto" class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">
+              Costo
+            </label>
+            <input
+              id="bulkCosto"
+              type="number"
+              min="0"
+              [(ngModel)]="bulkCosto"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="$"
+              class="w-28 border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-black"
+            />
+          </div>
+          <div>
+            <label for="bulkStock" class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">
+              Stock
+            </label>
+            <input
+              id="bulkStock"
+              type="number"
+              min="0"
+              [(ngModel)]="bulkStock"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="0"
+              class="w-20 border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-black"
+            />
+          </div>
+          <button
+            type="button"
+            (click)="aplicarATodas()"
+            class="px-3 py-1.5 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition"
+          >
+            Aplicar a todas
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+          <table
+            class="w-full text-sm text-left border-collapse"
+            style="min-width: 960px"
+          >
+            <thead
+              class="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+            >
+              <tr>
+                <th class="px-3 py-3 w-36">Variante</th>
+                <th class="px-3 py-3 w-28">SKU</th>
+                <th class="px-3 py-3 w-28">Cód. barra</th>
+                <th class="px-3 py-3 w-24">
+                  Precio <span class="text-red-400">*</span>
+                </th>
+                <th class="px-3 py-3 w-24">
+                  Costo <span class="text-red-400">*</span>
+                </th>
+                <th class="px-3 py-3 w-16 text-center">Stock</th>
+                <th class="px-3 py-3 w-20 text-center">Mín.</th>
+                <th class="px-3 py-3 w-36">Fotos</th>
+                <th class="px-3 py-3 w-8"></th>
+              </tr>
+            </thead>
+            <tbody
+              formArrayName="listVariants"
+              class="divide-y divide-gray-100"
+            >
+              <tr
+                *ngFor="let item of listVariants.controls; let i = index"
+                [formGroupName]="i"
+                class="hover:bg-gray-50 transition align-top"
+              >
+                <!-- Variante -->
+                <td class="px-3 py-3" [class.opacity-50]="!varianteActiva(i)">
+                  <span
+                    class="text-xs font-medium text-black block truncate"
+                    [title]="getDescripcionVariante(item.value.atributos)"
+                  >
+                    {{ getDescripcionVariante(item.value.atributos) }}
+                  </span>
+                  @if (!varianteActiva(i)) {
+                    <span class="text-[10px] font-semibold text-red-500">Desactivada</span>
+                  } @else if (!esVarianteGuardada(i)) {
+                    <span class="text-[10px] text-blue-500">Nueva</span>
+                  }
+                </td>
+
+                <!-- SKU -->
+                <td class="px-3 py-3">
+                  <input
+                    formControlName="sku"
+                    type="text"
+                    class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
+                    placeholder="SKU"
+                  />
+                </td>
+
+                <!-- Código barras -->
+                <td class="px-3 py-3">
+                  <input
+                    formControlName="codigoBarra"
+                    type="text"
+                    class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
+                    placeholder="7891234..."
+                  />
+                </td>
+
+                <!-- Precio venta -->
+                <td class="px-3 py-3">
+                  <div class="relative">
+                    <span
+                      class="absolute inset-y-0 left-2 flex items-center text-gray-400 text-xs pointer-events-none"
+                      >$</span
+                    >
+                    <input
+                      formControlName="precioVenta"
+                      type="number"
+                      min="0"
+                      class="w-full border rounded-lg pl-5 pr-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-black"
+                      [class.border-red-400]="
+                        item.get('precioVenta')?.invalid &&
+                        item.get('precioVenta')?.touched
+                      "
+                      [class.border-gray-200]="
+                        !(
+                          item.get('precioVenta')?.invalid &&
+                          item.get('precioVenta')?.touched
+                        )
+                      "
+                      placeholder="0"
+                    />
+                  </div>
+                </td>
+
+                <!-- Costo -->
+                <td class="px-3 py-3">
+                  <div class="relative">
+                    <span
+                      class="absolute inset-y-0 left-2 flex items-center text-gray-400 text-xs pointer-events-none"
+                      >$</span
+                    >
+                    <input
+                      formControlName="costo"
+                      type="number"
+                      min="0"
+                      class="w-full border rounded-lg pl-5 pr-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-black"
+                      [class.border-red-400]="
+                        item.get('costo')?.invalid && item.get('costo')?.touched
+                      "
+                      [class.border-gray-200]="
+                        !(item.get('costo')?.invalid && item.get('costo')?.touched)
+                      "
+                      placeholder="0"
+                    />
+                  </div>
+                  @let m = margenVariante(i);
+                  @if (m !== null) {
+                    <p
+                      class="text-[10px] mt-1"
+                      [class.text-green-600]="m > 0"
+                      [class.text-red-500]="m <= 0"
+                    >
+                      Margen {{ m }}%
+                    </p>
+                  }
+                </td>
+
+                <!-- Stock -->
+                <td class="px-3 py-3">
+                  <input
+                    formControlName="stock"
+                    type="number"
+                    min="0"
+                    class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </td>
+
+                <!-- Stock mínimo -->
+                <td class="px-3 py-3">
+                  <input
+                    formControlName="stockMinimo"
+                    type="number"
+                    min="0"
+                    class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-1 focus:ring-black"
+                  />
+                </td>
+
+                <!-- Fotos -->
+                <td class="px-3 py-3">
+                  <div class="flex flex-wrap items-center gap-1">
+                    <img
+                      *ngFor="let url of getImagenesExistentes(i)"
+                      [src]="url"
+                      alt="foto guardada"
+                      class="w-9 h-9 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                    />
+                    <div
+                      *ngFor="
+                        let prev of getPreviewsVariante(i);
+                        let pi = index
+                      "
+                      class="relative group w-9 h-9 flex-shrink-0"
+                    >
+                      <img
+                        [src]="prev"
+                        alt="preview"
+                        class="w-full h-full object-cover rounded-lg border border-gray-200"
+                      />
+                      <span
+                        *ngIf="pi === 0"
+                        class="absolute -top-1 -left-1 bg-black text-white text-[7px] px-1 rounded-full leading-tight py-0.5"
+                      >
+                        1°
+                      </span>
+                      <button
+                        type="button"
+                        (click)="removeImagenVariante(i, pi)"
+                        class="absolute -top-1 -right-1 bg-white border border-gray-200 text-red-500 rounded-full w-4 h-4 flex items-center justify-center text-[9px] shadow opacity-0 group-hover:opacity-100 transition"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <label
+                      class="w-9 h-9 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center hover:border-black hover:bg-gray-50 transition text-gray-300 hover:text-black flex-shrink-0 cursor-pointer"
+                    >
+                      <i class="pi pi-camera" style="font-size: 11px"></i>
+                      <input
+                        type="file"
+                        class="hidden"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp"
+                        (change)="onFilesVariante($event, i)"
+                      />
+                    </label>
+                  </div>
+                </td>
+
+                <!-- Acciones -->
+                <td class="px-3 py-3 text-center whitespace-nowrap">
+                  @if (esVarianteGuardada(i)) {
+                    <button
+                      type="button"
+                      (click)="toggleEstadoVariante(i)"
+                      class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition"
+                      [title]="varianteActiva(i) ? 'Desactivar (no se vende)' : 'Activar'"
+                      [attr.aria-label]="varianteActiva(i) ? 'Desactivar variante' : 'Activar variante'"
+                    >
+                      <i
+                        class="pi text-xs"
+                        [class.pi-eye-slash]="varianteActiva(i)"
+                        [class.pi-eye]="!varianteActiva(i)"
+                      ></i>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="eliminarVarianteGuardada(i)"
+                      class="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition"
+                      title="Eliminar variante"
+                      aria-label="Eliminar variante"
+                    >
+                      <i class="pi pi-trash text-xs"></i>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      (click)="eliminarVariante(i)"
+                      class="p-1.5 rounded-lg hover:bg-red-50 text-gray-300 hover:text-red-500 transition"
+                      title="Quitar"
+                      aria-label="Quitar variante nueva"
+                    >
+                      <i class="pi pi-trash text-xs"></i>
+                    </button>
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+          <i class="pi pi-info-circle text-xs"></i>
+          Cada variante necesita su precio de venta y costo. En listados se
+          muestra el precio más bajo.
+        </p>
+      </div>
+    </div>
+
+    <!-- ══ Botones ════════════════════════════════════════════════════════ -->
+    <div
+      class="max-w-3xl mx-auto flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3"
+    >
+      <button
+        type="button"
+        routerLink="/admin/products"
+        class="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition text-center"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        [disabled]="isLoading"
+        class="px-6 py-2.5 bg-black hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        <i *ngIf="isLoading" class="pi pi-spin pi-spinner text-sm"></i>
+        {{
+          isLoading
+            ? 'Guardando...'
+            : edit
+              ? 'Guardar cambios'
+              : 'Crear producto'
+        }}
+      </button>
+    </div>
+  </form>
+  <p-confirmDialog></p-confirmDialog>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     PANEL LATERAL — Configurar variantes
+══════════════════════════════════════════════════════════════════════════ -->
+@if (visiblePropiedadModal) {
+  <div
+    class="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+    (click)="visiblePropiedadModal = false"
+  ></div>
+
+  <aside
+    class="fixed top-0 right-0 h-full z-50 w-full sm:w-96 bg-white shadow-2xl flex flex-col"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Cabecera panel -->
+    <div
+      class="flex items-center gap-3 px-5 py-4 border-b border-gray-100 flex-shrink-0"
+    >
+      <button
+        type="button"
+        (click)="visiblePropiedadModal = false"
+        class="p-2 rounded-xl hover:bg-gray-100 text-gray-400 transition"
+      >
+        <i class="pi pi-times text-sm"></i>
+      </button>
+      <div class="flex-1 min-w-0">
+        <h2 class="text-base font-bold text-black">Configurar variantes</h2>
+        <p class="text-xs text-gray-400 mt-0.5 truncate">
+          {{ resumenSeleccion || 'Seleccioná valores para cada atributo' }}
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="generarVariantes()"
+        [disabled]="totalCombinaciones === 0"
+        class="px-3.5 py-1.5 bg-black text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5 flex-shrink-0"
+      >
+        <i class="pi pi-check text-xs"></i>
+        Aplicar
+        {{ totalCombinaciones > 0 ? '(' + totalCombinaciones + ')' : '' }}
+      </button>
+    </div>
+
+    <!-- Counter -->
+    <div
+      *ngIf="totalCombinaciones > 0"
+      class="mx-4 mt-3 px-3 py-2.5 bg-black text-white rounded-xl flex items-center gap-2 flex-shrink-0"
+    >
+      <i class="pi pi-sparkles text-xs opacity-70"></i>
+      <p class="text-xs font-medium">
+        Se van a generar
+        <strong
+          >{{ totalCombinaciones }} variante{{
+            totalCombinaciones !== 1 ? 's' : ''
+          }}</strong
+        >
+      </p>
+    </div>
+
+    <!-- Aviso Talla/Talle -->
+    @if (tieneTallaOTalle()) {
+      <div
+        class="mx-4 mt-3 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2 flex-shrink-0"
+      >
+        <i class="pi pi-exclamation-triangle text-amber-500 text-xs mt-0.5"></i>
+        <p class="text-xs text-amber-700">
+          <strong>Talla</strong> y <strong>Talle</strong> no se pueden combinar.
+          Usá uno solo.
+        </p>
+      </div>
+    }
+
+    <!-- Lista atributos -->
+    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-2">
+      <div
+        *ngIf="atributos.length === 0"
+        class="flex flex-col items-center justify-center py-12 text-center"
+      >
+        <i class="pi pi-database text-3xl text-gray-200 mb-3"></i>
+        <p class="text-sm text-gray-400">No hay atributos disponibles.</p>
+        <p class="text-xs text-gray-300 mt-1">
+          Verificá que el DataSeeder corrió al iniciar Spring Boot.
+        </p>
+      </div>
+
+      <div
+        *ngFor="let atrib of atributos"
+        class="border border-gray-100 rounded-xl overflow-hidden"
+      >
+        <!-- Fila atributo -->
+        <div
+          class="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer transition"
+          (click)="toggleAtributoExpandido(atrib)"
+        >
+          <div class="flex items-center gap-2">
+            <div
+              class="w-1.5 h-1.5 rounded-full flex-shrink-0"
+              [class.bg-black]="puedeSeleccionar(atrib)"
+              [class.bg-gray-300]="!puedeSeleccionar(atrib)"
+            ></div>
+            <span
+              class="text-sm font-semibold"
+              [class.text-black]="puedeSeleccionar(atrib)"
+              [class.text-gray-300]="!puedeSeleccionar(atrib)"
+            >
+              {{ atrib.nombre }}
+            </span>
+            <span
+              *ngIf="!puedeSeleccionar(atrib)"
+              class="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full"
+            >
+              bloqueado
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span
+              *ngIf="getSeleccionLength(atrib.nombre) > 0"
+              class="text-xs text-white font-semibold bg-black px-2 py-0.5 rounded-full"
+            >
+              {{ getSeleccionLength(atrib.nombre) }}
+            </span>
+            <i
+              class="pi text-xs text-gray-400"
+              [class.pi-chevron-down]="isExpandido(atrib)"
+              [class.pi-chevron-right]="!isExpandido(atrib)"
+            ></i>
+          </div>
+        </div>
+
+        <!-- Valores expandidos -->
+        <div
+          *ngIf="isExpandido(atrib)"
+          class="px-4 pb-4 pt-3 border-t border-gray-100 bg-gray-50"
+        >
+          @if (atributoNoUsado(atrib)) {
+            <div
+              class="mb-3 px-3 py-2 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-700"
+            >
+              Las variantes de este producto no usan este atributo.
+            </div>
+          } @else if (!puedeSeleccionar(atrib)) {
+            <div
+              class="mb-3 px-3 py-2 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-700"
+            >
+              Desseleccioná
+              <strong>{{ atrib.nombre === 'Talla' ? 'Talle' : 'Talla' }}</strong>
+              para usar este atributo.
+            </div>
+          }
+          @if (valoresGuardados[atrib.nombre]) {
+            <p class="mb-2 text-[11px] text-gray-400 flex items-center gap-1">
+              <i class="pi pi-lock text-[9px]"></i>
+              Los valores con candado ya tienen variante guardada.
+            </p>
+          }
+
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            @if (!valoresPorAtributo[atrib.atributoId].length) {
+              <div
+                class="w-full py-3 text-center border border-dashed border-gray-200 rounded-xl text-xs text-gray-400 bg-white"
+              >
+                Agregá un valor abajo
+              </div>
+            }
+
+            <div
+              *ngFor="let valor of valoresPorAtributo[atrib.atributoId] || []"
+            >
+              @if (!estaEnEdicion(atrib, valor)) {
+                <div
+                  class="group flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition select-none"
+                  [class.cursor-pointer]="puedeSeleccionar(atrib)"
+                  [class.cursor-not-allowed]="!puedeSeleccionar(atrib)"
+                  [class.opacity-30]="!puedeSeleccionar(atrib)"
+                  [class.bg-black]="isValorSeleccionado(atrib.nombre, valor)"
+                  [class.text-white]="isValorSeleccionado(atrib.nombre, valor)"
+                  [class.border-black]="
+                    isValorSeleccionado(atrib.nombre, valor)
+                  "
+                  [class.bg-white]="!isValorSeleccionado(atrib.nombre, valor)"
+                  [class.text-gray-700]="
+                    !isValorSeleccionado(atrib.nombre, valor)
+                  "
+                  [class.border-gray-200]="
+                    !isValorSeleccionado(atrib.nombre, valor)
+                  "
+                  (click)="
+                    puedeSeleccionar(atrib) &&
+                      toggleValor(
+                        atrib,
+                        valor,
+                        !isValorSeleccionado(atrib.nombre, valor)
+                      )
+                  "
+                >
+                  <span
+                    (dblclick)="
+                      $event.stopPropagation(); iniciarEdicion(atrib, valor)
+                    "
+                    [title]="
+                      esValorGuardado(atrib, valor)
+                        ? 'Ya existe una variante con este valor'
+                        : 'Clic seleccionar · Doble clic editar'
+                    "
+                  >
+                    @if (esValorGuardado(atrib, valor)) {
+                      <i class="pi pi-lock mr-0.5" style="font-size: 8px"></i>
+                    }
+                    {{ valor }}
+                  </span>
+                  <!-- Invisibles y sin click hasta el hover: si no, un click en la
+                       mitad derecha del chip abría la edición en vez de seleccionar -->
+                  <span
+                    class="flex items-center gap-0.5 ml-0.5 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity"
+                  >
+                    <button
+                      type="button"
+                      (click)="
+                        $event.stopPropagation(); iniciarEdicion(atrib, valor)
+                      "
+                    >
+                      <i class="pi pi-pencil" style="font-size: 8px"></i>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="
+                        $event.stopPropagation(); eliminarValor(atrib, valor)
+                      "
+                    >
+                      <i class="pi pi-times" style="font-size: 8px"></i>
+                    </button>
+                  </span>
+                </div>
+              }
+
+              @if (estaEnEdicion(atrib, valor)) {
+                <div
+                  class="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs border border-black bg-white shadow-sm"
+                >
+                  <input
+                    type="text"
+                    [(ngModel)]="valorEnEdicion[atrib.atributoId + '-' + valor]"
+                    [ngModelOptions]="{ standalone: true }"
+                    (keydown)="onEdicionKeydown($event, atrib, valor)"
+                    (blur)="guardarEdicion(atrib, valor)"
+                    [style.width]="
+                      (valorEnEdicion[atrib.atributoId + '-' + valor].length ||
+                        3) +
+                      2 +
+                      'ch'
+                    "
+                    class="outline-none text-xs text-black bg-transparent"
+                  />
+                  <button
+                    type="button"
+                    (click)="guardarEdicion(atrib, valor)"
+                    class="text-black hover:text-gray-600 transition"
+                  >
+                    <i class="pi pi-check" style="font-size: 9px"></i>
+                  </button>
+                  <button
+                    type="button"
+                    (click)="cancelarEdicion(atrib, valor)"
+                    class="text-gray-400 hover:text-red-500 transition"
+                  >
+                    <i class="pi pi-times" style="font-size: 9px"></i>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Input nuevo valor -->
+          <div class="flex gap-2">
+            <input
+              type="text"
+              [(ngModel)]="nuevoValorInput[atrib.atributoId]"
+              [ngModelOptions]="{ standalone: true }"
+              (keydown.enter)="agregarValorCustom(atrib)"
+              [placeholder]="'Ej: ' + ejemploValor(atrib.nombre)"
+              class="flex-1 border border-gray-200 rounded-xl px-3 py-1.5 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-black placeholder:text-gray-300"
+            />
+            <button
+              type="button"
+              (click)="agregarValorCustom(atrib)"
+              class="px-3 py-1.5 bg-black text-white rounded-xl text-xs font-semibold hover:bg-gray-800 transition"
+            >
+              + Agregar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer panel -->
+    <div class="px-4 py-4 border-t border-gray-100 flex-shrink-0">
+      <button
+        type="button"
+        (click)="generarVariantes()"
+        [disabled]="totalCombinaciones === 0"
+        class="w-full py-3 bg-black hover:bg-gray-800 text-white font-semibold text-sm rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        <i class="pi pi-check-circle text-sm"></i>
+        Generar
+        {{
+          totalCombinaciones > 0
+            ? totalCombinaciones +
+              ' variante' +
+              (totalCombinaciones !== 1 ? 's' : '')
+            : 'variantes'
+        }}
+      </button>
+    </div>
+  </aside>
+}

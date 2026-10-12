@@ -1,0 +1,300 @@
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <!-- ══ Cabecera ══════════════════════════════════════════════════════════ -->
+  <div
+    class="max-w-5xl mx-auto pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6"
+  >
+    <div>
+      <h2 class="text-xl font-bold text-black">Clientes</h2>
+      <p class="text-xs text-gray-400 mt-0.5">
+        {{ listClient.length }} usuario{{ listClient.length !== 1 ? 's' : '' }}
+        registrados
+      </p>
+    </div>
+    <button
+      (click)="visibleClient = true"
+      class="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition self-start sm:self-auto"
+    >
+      <i class="pi pi-plus text-xs"></i>
+      Nuevo cliente
+    </button>
+  </div>
+
+  <!-- ══ Contenido ══════════════════════════════════════════════════════════ -->
+  <div class="max-w-5xl mx-auto">
+    <!-- Sin usuarios -->
+    <div
+      *ngIf="listClient.length === 0"
+      class="bg-white border border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center"
+    >
+      <i class="pi pi-users text-5xl text-gray-200 mb-4"></i>
+      <p class="text-base font-semibold text-gray-400 mb-1">
+        No hay clientes todavía
+      </p>
+      <p class="text-sm text-gray-300 mb-5">
+        Creá el primer cliente para empezar
+      </p>
+      <button
+        (click)="visibleClient = true"
+        class="px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition"
+      >
+        Crear cliente
+      </button>
+    </div>
+
+    <!-- ── Vista desktop: tabla ──────────────────────────────────────────── -->
+    <div
+      *ngIf="listClient.length > 0"
+      class="hidden sm:block bg-white border border-gray-200 rounded-2xl overflow-hidden"
+    >
+      <div class="overflow-x-auto">
+        <table
+          class="w-full text-sm text-left border-collapse"
+          style="min-width: 680px"
+        >
+          <thead
+            class="text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 bg-gray-50"
+          >
+            <tr>
+              <th class="px-5 py-3.5">Nombre</th>
+              <th class="px-5 py-3.5">Apellido</th>
+              <th class="px-5 py-3.5 w-24">Email</th>
+              <th class="px-5 py-3.5 w-24">Dni</th>
+              <th class="px-5 py-3.5 w-20"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (item of listClient; track $index) {
+              <tr class="hover:bg-gray-50 transition group">
+                <!-- Usuario -->
+                <td class="px-5 py-3.5">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-8 h-8 rounded-full bg-black text-white text-xs font-bold flex items-center justify-center flex-shrink-0"
+                    >
+                      {{ item.name.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="font-semibold text-black text-sm">
+                      {{ item.name }}
+                    </span>
+                  </div>
+                </td>
+
+                <td class="px-5 py-3.5">
+                  <span
+                    class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600"
+                  >
+                    {{ item.username }}
+                  </span>
+                </td>
+
+                <td class="px-5 py-3.5">
+                  <span class="text-sm text-gray-600">{{ item.mail }}</span>
+                </td>
+
+                <td class="px-5 py-3.5">
+                  <span class="text-sm text-gray-600">{{ item.dni }}</span>
+                </td>
+
+                <!-- Acciones -->
+                <td class="px-5 py-3.5">
+                  <div
+                    class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <button
+                      type="button"
+                      class="p-2 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-black transition"
+                      title="Editar"
+                    >
+                      <i class="pi pi-pencil text-xs"></i>
+                    </button>
+                    <button
+                      type="button"
+                      class="p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition"
+                      title="Eliminar"
+                    >
+                      <i class="pi pi-trash text-xs"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Vista mobile: tarjetas ─────────────────────────────────────────── -->
+    <div *ngIf="listClient.length > 0" class="sm:hidden space-y-3">
+      @for (item of listClient; track $index) {
+        <div class="bg-white border border-gray-200 rounded-2xl p-4">
+          <div class="flex items-start gap-3">
+            <!-- Avatar -->
+            <div
+              class="w-10 h-10 rounded-full bg-black text-white text-sm font-bold flex items-center justify-center flex-shrink-0"
+            >
+              {{ item.name.charAt(0).toUpperCase() }}
+            </div>
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <p class="font-semibold text-black text-sm">{{ item.name }}</p>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">{{ item.username }}</p>
+              <span
+                class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 mt-1 inline-block"
+              >
+                {{ item.mail }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Acciones mobile -->
+          <div
+            class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100"
+          >
+            <button
+              type="button"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition"
+            >
+              <i class="pi pi-pencil text-xs"></i>
+              Editar
+            </button>
+            <button
+              type="button"
+              class="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-500 border border-red-100 rounded-xl hover:bg-red-50 transition"
+            >
+              <i class="pi pi-trash text-xs"></i>
+              Eliminar
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+<p-confirmDialog></p-confirmDialog>
+
+<!-- ══ Modal — Nuevo usuario ═════════════════════════════════════════════ -->
+<p-dialog
+  header="Nuevo cliente"
+  [modal]="true"
+  [(visible)]="visibleClient"
+  [style]="{ width: '26rem' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <form [formGroup]="formClient" class="pt-2 space-y-4">
+    <p class="text-xs text-gray-400">
+      Completá los datos para crear el acceso al sistema.
+    </p>
+
+    <!-- Nombre -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+      >
+        Nombre <span class="text-red-500">*</span>
+      </label>
+      <input
+        formControlName="name"
+        type="text"
+        placeholder="Juan"
+        autocomplete="off"
+        class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+        [class.border-red-400]="hasError('name', 'required')"
+        [class.border-gray-200]="!hasError('name', 'required')"
+      />
+      <p
+        *ngIf="hasError('name', 'required')"
+        class="text-xs text-red-500 mt-1 flex items-center gap-1"
+      >
+        <i class="pi pi-exclamation-triangle text-xs"></i> Campo obligatorio
+      </p>
+    </div>
+    <!-- Apellido -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+      >
+        Apellido <span class="text-red-500">*</span>
+      </label>
+      <input
+        formControlName="username"
+        type="text"
+        placeholder="Alvarez"
+        autocomplete="off"
+        class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+        [class.border-red-400]="hasError('username', 'required')"
+        [class.border-gray-200]="!hasError('username', 'required')"
+      />
+      <p
+        *ngIf="hasError('username', 'required')"
+        class="text-xs text-red-500 mt-1 flex items-center gap-1"
+      >
+        <i class="pi pi-exclamation-triangle text-xs"></i> Campo obligatorio
+      </p>
+    </div>
+
+    <!-- Email -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+      >
+        Email <span class="text-red-500">*</span>
+      </label>
+      <input
+        formControlName="mail"
+        type="email"
+        placeholder="ejemplo@gmail.com"
+        autocomplete="off"
+        class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+      />
+    </div>
+
+    <!-- DNI -->
+    <div>
+      <label
+        class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
+      >
+        DNI <span class="text-red-500">*</span>
+      </label>
+      <input
+        formControlName="dni"
+        type="text"
+        placeholder="34332112"
+        autocomplete="off"
+        class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+        [class.border-red-400]="hasError('dni', 'required')"
+        [class.border-gray-200]="!hasError('dni', 'required')"
+      />
+      <p
+        *ngIf="hasError('dni', 'required')"
+        class="text-xs text-red-500 mt-1 flex items-center gap-1"
+      >
+        <i class="pi pi-exclamation-triangle text-xs"></i> Campo obligatorio
+      </p>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex gap-3 justify-end pt-2">
+      <button
+        type="button"
+        (click)="visibleClient = false"
+        class="px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+      >
+        Cancelar
+      </button>
+      <button
+        type="button"
+        [disabled]="formClient.invalid || isLoading"
+        (click)="addClient()"
+        class="px-4 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+      >
+        <i *ngIf="isLoading" class="pi pi-spin pi-spinner text-xs"></i>
+        {{ isLoading ? 'Creando...' : 'Crear usuario' }}
+      </button>
+    </div>
+  </form>
+</p-dialog>

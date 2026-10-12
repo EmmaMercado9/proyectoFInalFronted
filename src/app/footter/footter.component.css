@@ -1,0 +1,12 @@
+@media (max-width: 576px) {
+  #mi-modal .modal-dialog,
+  #mi-inicio .modal-dialog,
+  #mi-search .modal-dialog {
+    max-width: 70%; /* Ajusta el ancho del modal */
+    margin: 5px auto; /* Agrega espacio alrededor */
+  }
+}
+
+.poin {
+  cursor: pointer;
+}

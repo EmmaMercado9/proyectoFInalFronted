@@ -13,3 +13,75 @@
 body {
   @apply font-sans;
 }
+
+/* ── Ticket térmico (shared/ticket) ──────────────────────────────────────
+   Oculto en pantalla salvo dentro de .ticket-vista (vista previa). Al
+   imprimir con imprimirTicket() el <body> recibe .imprimiendo-ticket y solo
+   se imprime el ticket, al ancho del rollo (80 mm → 72 mm útiles, 58 → 48). */
+.ticket-termico {
+  display: none;
+  color: #000;
+  background: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  line-height: 1.3;
+  word-wrap: break-word;
+  padding: 2mm;
+}
+.ticket-termico.ancho-80 {
+  width: 72mm;
+  font-size: 9pt;
+}
+.ticket-termico.ancho-58 {
+  width: 48mm;
+  font-size: 7.5pt;
+}
+.ticket-termico .tk-centro { text-align: center; }
+.ticket-termico .tk-negrita { font-weight: bold; }
+.ticket-termico .tk-marca { font-size: 1.6em; font-weight: bold; letter-spacing: 3px; }
+.ticket-termico .tk-titulo { font-size: 1.25em; font-weight: bold; }
+.ticket-termico .tk-chico { font-size: 0.85em; }
+.ticket-termico .tk-sep { border-top: 1px dashed #000; margin: 1.5mm 0; }
+.ticket-termico .tk-fila { display: flex; justify-content: space-between; gap: 2mm; }
+.ticket-termico .tk-item { margin: 1mm 0; }
+.ticket-termico .tk-item-desc { font-weight: bold; }
+.ticket-termico .tk-total { font-size: 1.3em; font-weight: bold; }
+.ticket-termico .tk-qr {
+  display: block;
+  width: 32mm;
+  height: 32mm;
+  margin: 1.5mm auto;
+  image-rendering: pixelated;
+}
+.ticket-termico.ancho-58 .tk-qr { width: 28mm; height: 28mm; }
+
+/* Vista previa en pantalla */
+.ticket-vista .ticket-termico {
+  display: block;
+  margin: 0 auto;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+}
+
+@media print {
+  body.imprimiendo-ticket * {
+    visibility: hidden;
+  }
+  body.imprimiendo-ticket .ticket-termico,
+  body.imprimiendo-ticket .ticket-termico * {
+    visibility: visible;
+  }
+  body.imprimiendo-ticket {
+    margin: 0;
+    background: #fff;
+  }
+  body.imprimiendo-ticket .ticket-termico:not(.para-imprimir) {
+    display: none;
+  }
+  /* Solo el ticket de impresión (no el de la vista previa) */
+  body.imprimiendo-ticket .ticket-termico.para-imprimir {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: none;
+  }
+}

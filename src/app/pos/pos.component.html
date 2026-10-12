@@ -30,6 +30,7 @@
           [(ngModel)]="busqueda"
           (ngModelChange)="onBusqueda()"
           (blur)="cerrarResultados()"
+          (focus)="reabrirResultados()"
           placeholder="Buscá por nombre, SKU o escaneá el código de barras..."
           autocomplete="off"
           class="w-full border border-gray-200 rounded-2xl pl-9 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black transition placeholder:text-gray-300"
@@ -487,6 +488,25 @@
             </span>
           </div>
         </div>
+
+        <!-- Facturar al vender (solo si la facturación está lista) -->
+        <label
+          *ngIf="facturacionLista"
+          class="flex items-center justify-between gap-2 mb-3 px-3 py-2.5 border border-gray-200 rounded-xl cursor-pointer select-none"
+        >
+          <span class="flex items-center gap-2 text-sm font-semibold text-black">
+            <input
+              type="checkbox"
+              [ngModel]="facturarAlVender"
+              (ngModelChange)="cambiarFacturar($event)"
+              class="accent-black w-4 h-4"
+            />
+            Emitir factura (Factura C)
+          </span>
+          <span *ngIf="esPrueba" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+            Prueba
+          </span>
+        </label>
 
         <!-- Botón confirmar -->
         <button

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -34,6 +34,8 @@ type OpcionNc = 'DEVOLUCION' | 'TOTAL' | 'IMPORTE';
 export class FacturacionVentaComponent implements OnChanges {
   @Input({ required: true }) orden!: OrderResponse;
   @Input() devoluciones: DevolucionResponse[] = [];
+  /** Factura vigente de la venta (para el ticket), o null si no tiene */
+  @Output() facturaVigente = new EventEmitter<Factura | null>();
 
   private facturacion = inject(FacturacionService);
   private message = inject(MessageService);
@@ -72,14 +74,25 @@ export class FacturacionVentaComponent implements OnChanges {
     this.facturacion
       .estado()
       .pipe(catchError(() => of(null)))
-      .subscribe((e) => (this.estado = e));
+      .subscribe((e) => {
+        this.estado = e;
+        this.avisar();
+      });
     this.facturacion
       .porOrden(this.orden.idOrder)
       .pipe(
         catchError(() => of([] as Factura[])),
         finalize(() => (this.cargando = false))
       )
-      .subscribe((f) => (this.facturas = f));
+      .subscribe((f) => {
+        this.facturas = f;
+        this.avisar();
+      });
+  }
+
+  // En el próximo tick: el estado puede llegar cacheado dentro del mismo ciclo de detección
+  private avisar(): void {
+    queueMicrotask(() => this.facturaVigente.emit(this.factura ?? null));
   }
 
   // ─── Estado ─────────────────────────────────────────────────────────────
@@ -175,6 +188,7 @@ export class FacturacionVentaComponent implements OnChanges {
         next: (f) => {
           this.dialogFacturar = false;
           this.facturas = [...this.facturas, f];
+          this.avisar();
           this.message.add({
             severity: 'success',
             summary: 'Factura emitida',

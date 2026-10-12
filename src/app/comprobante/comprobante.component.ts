@@ -2,6 +2,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { catchError, of } from 'rxjs';
 import { ToastModule } from 'primeng/toast';
 
@@ -17,6 +18,14 @@ import {
 import { UserService } from '../services/user.service';
 import { CancelarOrdenComponent } from '../shared/cancelar-orden/cancelar-orden.component';
 import { FacturacionVentaComponent } from '../shared/facturacion-venta/facturacion-venta.component';
+import { TicketComponent } from '../shared/ticket/ticket.component';
+import {
+  AnchoTicket,
+  anchoTicketGuardado,
+  guardarAnchoTicket,
+  imprimirTicket,
+} from '../shared/ticket/ticket-impresion';
+import { Factura } from '../services/facturacion.service';
 import {
   admiteDevolucion,
   formaReintegroLabel,
@@ -29,7 +38,15 @@ import {
   selector: 'app-comprobante',
   standalone: true,
   templateUrl: './comprobante.component.html',
-  imports: [CommonModule, RouterModule, ToastModule, CancelarOrdenComponent, FacturacionVentaComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    ToastModule,
+    CancelarOrdenComponent,
+    FacturacionVentaComponent,
+    TicketComponent,
+  ],
 })
 export class ComprobanteComponent implements OnInit {
   orden: OrderResponse | null = null;
@@ -38,6 +55,10 @@ export class ComprobanteComponent implements OnInit {
   error = false;
   // Orden a cancelar (abre el diálogo)
   aCancelar: OrderResponse | null = null;
+  // Factura vigente: si existe, el ticket sale como Ticket Factura C
+  facturaVigente: Factura | null = null;
+  anchoTicket: AnchoTicket = anchoTicketGuardado();
+  verTicket = false;
 
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
@@ -107,7 +128,12 @@ export class ComprobanteComponent implements OnInit {
     return this.orden?.cliente?.name?.charAt(0)?.toUpperCase() ?? '?';
   }
 
+  cambiarAncho(ancho: AnchoTicket): void {
+    this.anchoTicket = ancho;
+    guardarAnchoTicket(ancho);
+  }
+
   imprimir(): void {
-    window.print();
+    imprimirTicket(this.anchoTicket);
   }
 }

@@ -9,13 +9,33 @@
         >
           <i class="pi pi-arrow-left text-xs"></i> Volver a la venta #{{ factura.idOrder }}
         </a>
-        <button
-          type="button"
-          (click)="imprimir()"
-          class="px-4 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition flex items-center gap-2"
-        >
-          <i class="pi pi-print text-sm"></i> Imprimir / guardar PDF
-        </button>
+        <div class="flex items-center gap-2">
+          <div class="flex rounded-xl overflow-hidden">
+            <button
+              type="button"
+              (click)="imprimirTicket()"
+              class="px-4 py-2.5 bg-black text-white text-sm font-semibold hover:bg-gray-800 transition flex items-center gap-2"
+            >
+              <i class="pi pi-print text-sm"></i> Ticket
+            </button>
+            <select
+              [ngModel]="anchoTicket"
+              (ngModelChange)="cambiarAncho($event)"
+              aria-label="Ancho del rollo"
+              class="bg-gray-800 text-white text-xs font-semibold px-2 border-l border-gray-600 focus:outline-none cursor-pointer"
+            >
+              <option [ngValue]="80">80 mm</option>
+              <option [ngValue]="58">58 mm</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            (click)="imprimir()"
+            class="px-4 py-2.5 border border-gray-200 bg-white text-sm font-semibold rounded-xl hover:bg-gray-50 transition flex items-center gap-2"
+          >
+            <i class="pi pi-file-pdf text-sm"></i> A4 / PDF
+          </button>
+        </div>
       }
     </div>
 
@@ -128,3 +148,6 @@
     }
   </div>
 </section>
+
+<!-- Versión ticketeadora (solo al imprimir ticket) -->
+<app-ticket [factura]="factura" [ancho]="anchoTicket"></app-ticket>

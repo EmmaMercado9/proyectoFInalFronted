@@ -27,6 +27,8 @@ import { ProductService } from '../services/products.service';
 import { OrderService, OrderRequest } from '../services/order.service';
 import { UserService } from '../services/user.service';
 import { ClientService, ClienteDTO } from '../services/client.service';
+import { FacturacionService } from '../services/facturacion.service';
+import { ErrorHandleService } from '../error/error-handle.service';
 
 // ─── Interfaces locales ───────────────────────────────────────────────────
 
@@ -119,12 +121,44 @@ export class PosComponent implements OnInit, OnDestroy {
   private clientService = inject(ClientService);
   private router = inject(Router);
   private message = inject(MessageService);
+  private facturacion = inject(FacturacionService);
+  private errorService = inject(ErrorHandleService);
+
+  // ─── Facturación al vender (opcional, se recuerda la elección) ──────────
+  facturacionLista = false;
+  esPrueba = true;
+  facturarAlVender = this.leerPreferencia();
 
   private readonly API = `${environment.apiUrl}/api`;
 
   // ─────────────────────────────────────────────────────────────────────────
 
+  private leerPreferencia(): boolean {
+    try {
+      return localStorage.getItem('pos.facturar') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  cambiarFacturar(valor: boolean): void {
+    this.facturarAlVender = valor;
+    try {
+      localStorage.setItem('pos.facturar', valor ? '1' : '0');
+    } catch {
+      /* sin storage */
+    }
+  }
+
   ngOnInit(): void {
+    this.facturacion.estado().subscribe({
+      next: (e) => {
+        this.facturacionLista = e.habilitada;
+        this.esPrueba = e.ambiente !== 'PRODUCCION';
+      },
+      error: () => (this.facturacionLista = false),
+    });
+
     this.subs.push(
       this.searchSubject
         .pipe(debounceTime(350), distinctUntilChanged())
@@ -500,14 +534,49 @@ export class PosComponent implements OnInit, OnDestroy {
       )
       .subscribe((orden) => {
         if (!orden) return;
-        this.procesando = false;
         this.limpiarCarrito();
         this.limpiarCliente();
-        this.router.navigate(['/admin/comprobante', orden.trackingId]);
+        const irAlComprobante = () => {
+          this.procesando = false;
+          this.router.navigate(['/admin/comprobante', orden.trackingId]);
+        };
+        if (!(this.facturarAlVender && this.facturacionLista)) {
+          irAlComprobante();
+          return;
+        }
+        // La venta ya está guardada: si ARCA falla se avisa y se puede
+        // facturar después desde el comprobante
+        this.facturacion.facturar(orden.idOrder, {}).subscribe({
+          next: (f) => {
+            this.message.add({
+              severity: 'success',
+              summary: 'Venta facturada',
+              detail: `${f.tipoDescripcion} ${f.numeroFormateado} · CAE ${f.cae}`,
+              life: 5000,
+            });
+            irAlComprobante();
+          },
+          error: (err) => {
+            const m = this.errorService.toMessage(err);
+            this.message.add({
+              ...m,
+              summary: 'Venta registrada sin factura',
+              detail: `${m.detail} — Podés facturarla desde el comprobante.`,
+              life: 9000,
+            });
+            irAlComprobante();
+          },
+        });
       });
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────
+
+  // Al volver al buscador con el mismo texto, mostrar de nuevo lo ya buscado
+  // (la búsqueda ignora textos repetidos, así que no se vuelve a disparar)
+  reabrirResultados(): void {
+    if (this.busqueda.trim()) this.mostrarResultados = true;
+  }
 
   cerrarResultados(): void {
     setTimeout(() => {

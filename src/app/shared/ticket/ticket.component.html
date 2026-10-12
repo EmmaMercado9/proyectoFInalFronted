@@ -1,0 +1,125 @@
+<div
+  class="ticket-termico"
+  [class.ancho-80]="ancho === 80"
+  [class.ancho-58]="ancho === 58"
+  [class.para-imprimir]="!vistaPrevia"
+>
+  <!-- Encabezado: emisor -->
+  <div class="tk-centro">
+    <div class="tk-marca">CLOUFIT</div>
+    @if (factura; as f) {
+      <div class="tk-negrita">{{ f.emisor.razonSocial }}</div>
+      @if (f.emisor.domicilio) {
+        <div>{{ f.emisor.domicilio }}</div>
+      }
+      <div>CUIT: {{ f.emisor.cuit }}</div>
+      @if (f.emisor.iibb) {
+        <div>IIBB: {{ f.emisor.iibb }}</div>
+      }
+      @if (f.emisor.inicioActividades) {
+        <div>Inicio de actividades: {{ f.emisor.inicioActividades }}</div>
+      }
+      <div>{{ f.emisor.condicionIva }}</div>
+    } @else {
+      <div>Tu estilo, tu identidad</div>
+    }
+  </div>
+
+  <div class="tk-sep"></div>
+
+  <!-- Tipo de comprobante -->
+  @if (factura; as f) {
+    <div class="tk-centro">
+      <div class="tk-titulo">{{ esNotaCredito ? 'NOTA DE CRÉDITO C' : 'FACTURA C' }}</div>
+      <div>Cód. {{ codigo }}</div>
+    </div>
+    <div class="tk-fila"><span>Nro:</span><span class="tk-negrita">{{ f.numeroFormateado }}</span></div>
+    <div class="tk-fila"><span>Fecha:</span><span>{{ f.fecha | date: 'dd/MM/yyyy' }}</span></div>
+    @if (f.facturaAsociadaNumero) {
+      <div class="tk-fila"><span>Asoc.:</span><span>Fact. C {{ f.facturaAsociadaNumero }}</span></div>
+    }
+  } @else if (orden) {
+    <div class="tk-centro tk-negrita">COMPROBANTE DE VENTA</div>
+    <div class="tk-fila"><span>Fecha:</span><span>{{ orden.orderDate | date: 'dd/MM/yyyy HH:mm' }}</span></div>
+  }
+  @if (orden) {
+    <div class="tk-fila"><span>Venta:</span><span>#{{ orden.idOrder }} · {{ numeroOrden }}</span></div>
+  }
+  @if (orden?.status === 'CANCELADA') {
+    <div class="tk-centro tk-titulo">*** ANULADA ***</div>
+  } @else if (orden && (orden.status === 'DEVUELTA' || orden.status === 'DEVUELTA_PARCIAL') && !factura) {
+    <div class="tk-centro">{{ statusLabel(orden.status) }}</div>
+  }
+
+  <div class="tk-sep"></div>
+
+  <!-- Receptor -->
+  @if (factura; as f) {
+    @if (f.docTipo === 99) {
+      <div>A consumidor final</div>
+    } @else {
+      <div>{{ docTipoLabel(f.docTipo) }}: {{ f.docNro }}</div>
+      @if (f.receptorNombre) {
+        <div>{{ f.receptorNombre }}</div>
+      }
+    }
+    <div>Cond. IVA: {{ f.condicionIvaReceptor }}</div>
+    <div class="tk-sep"></div>
+  } @else if (orden?.cliente) {
+    <div>Cliente: {{ orden?.cliente?.name }}</div>
+    @if (orden?.cliente?.dni) {
+      <div>DNI: {{ orden?.cliente?.dni }}</div>
+    }
+    <div class="tk-sep"></div>
+  }
+
+  <!-- Ítems -->
+  @for (l of lineas; track $index) {
+    <div class="tk-item">
+      <div class="tk-item-desc">{{ l.descripcion }}</div>
+      @if (l.detalle) {
+        <div class="tk-chico">{{ l.detalle }}</div>
+      }
+      <div class="tk-fila">
+        <span>{{ l.cantidad }} x</span>
+        <span>{{ l.importe | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span>
+      </div>
+    </div>
+  }
+
+  <div class="tk-sep"></div>
+
+  <!-- Totales -->
+  @if (!factura && orden && orden.discount > 0) {
+    <div class="tk-fila"><span>Subtotal</span><span>{{ orden.subtotal | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span></div>
+    <div class="tk-fila"><span>Descuento</span><span>-{{ orden.discount | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span></div>
+  }
+  <div class="tk-fila tk-total">
+    <span>TOTAL</span>
+    <span>{{ total | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span>
+  </div>
+  @if (orden && !esNotaCredito) {
+    <div class="tk-fila"><span>Pago:</span><span>{{ paymentLabel(orden.payment) }}</span></div>
+  }
+
+  <div class="tk-sep"></div>
+
+  <!-- Pie ARCA / no fiscal -->
+  @if (factura; as f) {
+    <div class="tk-fila"><span>CAE:</span><span class="tk-negrita">{{ f.cae }}</span></div>
+    <div class="tk-fila"><span>Vto. CAE:</span><span>{{ f.caeVencimiento | date: 'dd/MM/yyyy' }}</span></div>
+    @if (qr) {
+      <div class="tk-centro"><img [src]="qr" alt="QR ARCA" class="tk-qr" /></div>
+    }
+    <div class="tk-centro tk-negrita">ARCA - Comprobante Autorizado</div>
+    @if (f.prueba) {
+      <div class="tk-centro tk-titulo">COMPROBANTE DE PRUEBA</div>
+      <div class="tk-centro tk-negrita">SIN VALIDEZ FISCAL</div>
+    }
+  } @else {
+    <div class="tk-centro tk-negrita">DOCUMENTO NO VÁLIDO COMO FACTURA</div>
+  }
+
+  <div class="tk-sep"></div>
+  <div class="tk-centro">¡Gracias por tu compra!</div>
+</div>

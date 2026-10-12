@@ -115,6 +115,15 @@
       <p class="text-sm text-gray-400">Esta venta no se puede facturar ({{ orden.status | lowercase }}).</p>
     }
 
+    @if (otrosComprobantes.length) {
+      <p class="mt-3 text-[11px] text-gray-400">
+        Comprobantes de prueba anteriores:
+        @for (o of otrosComprobantes; track o.idFactura; let last = $last) {
+          <a [routerLink]="['/admin/facturas', o.idFactura]" class="underline hover:text-black">{{ o.tipoDescripcion }} {{ o.numeroFormateado }}</a>{{ last ? '' : ', ' }}
+        }
+      </p>
+    }
+
     @if (esAdmin && estado) {
       <button
         type="button"

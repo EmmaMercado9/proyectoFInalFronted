@@ -84,12 +84,21 @@ export class FacturacionVentaComponent implements OnChanges {
 
   // ─── Estado ─────────────────────────────────────────────────────────────
 
+  /** Factura del ambiente actual: las de prueba no cuentan al facturar de verdad */
   get factura(): Factura | undefined {
-    return this.facturas.find((f) => f.tipo === 'FACTURA_C');
+    const ambiente = this.estado?.ambiente ?? 'HOMOLOGACION';
+    return this.facturas.find((f) => f.tipo === 'FACTURA_C' && f.ambiente === ambiente);
   }
 
   get notasCredito(): Factura[] {
-    return this.facturas.filter((f) => f.tipo === 'NOTA_CREDITO_C');
+    const id = this.factura?.idFactura;
+    return this.facturas.filter((f) => f.tipo === 'NOTA_CREDITO_C' && f.idFacturaAsociada === id);
+  }
+
+  /** Comprobantes de otro ambiente (ej. pruebas viejas una vez en producción) */
+  get otrosComprobantes(): Factura[] {
+    const propios = new Set([this.factura?.idFactura, ...this.notasCredito.map((n) => n.idFactura)]);
+    return this.facturas.filter((f) => !propios.has(f.idFactura));
   }
 
   get puedeFacturar(): boolean {
@@ -220,7 +229,7 @@ export class FacturacionVentaComponent implements OnChanges {
           this.message.add({
             severity: 'success',
             summary: 'Nota de crédito emitida',
-            detail: `${nc.numeroFormateado} por $${nc.importeTotal} · CAE ${nc.cae}`,
+            detail: `${nc.numeroFormateado} por ${nc.importeTotal.toLocaleString('es-AR', { style: 'currency', currency: 'ARS' })} · CAE ${nc.cae}`,
             life: 5000,
           });
           this.cargar(); // refresca el saldo de la factura

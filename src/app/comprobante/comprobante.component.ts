@@ -16,6 +16,7 @@ import {
 } from '../services/devolucion.service';
 import { UserService } from '../services/user.service';
 import { CancelarOrdenComponent } from '../shared/cancelar-orden/cancelar-orden.component';
+import { FacturacionVentaComponent } from '../shared/facturacion-venta/facturacion-venta.component';
 import {
   admiteDevolucion,
   formaReintegroLabel,
@@ -28,7 +29,7 @@ import {
   selector: 'app-comprobante',
   standalone: true,
   templateUrl: './comprobante.component.html',
-  imports: [CommonModule, RouterModule, ToastModule, CancelarOrdenComponent],
+  imports: [CommonModule, RouterModule, ToastModule, CancelarOrdenComponent, FacturacionVentaComponent],
 })
 export class ComprobanteComponent implements OnInit {
   orden: OrderResponse | null = null;

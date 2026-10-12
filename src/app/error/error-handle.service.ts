@@ -77,6 +77,8 @@ export class ErrorHandleService {
         return 'No encontrado';
       case 409:
         return 'Conflicto';
+      case 502:
+        return 'Error de ARCA'; // el backend usa 502 cuando ARCA rechaza o no responde
       default:
         return 'Error';
     }

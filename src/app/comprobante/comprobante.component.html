@@ -331,6 +331,9 @@
         </div>
       }
 
+      <!-- ── Facturación electrónica (ARCA) ───────────────────────────── -->
+      <app-facturacion-venta [orden]="orden" [devoluciones]="devoluciones"></app-facturacion-venta>
+
       <!-- ── Acciones sobre la venta ──────────────────────────────────── -->
       @if (admiteDevolucion || puedeCancelar) {
         <div class="flex flex-col sm:flex-row gap-3">

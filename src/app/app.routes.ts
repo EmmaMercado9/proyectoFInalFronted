@@ -57,6 +57,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'facturas/:id',
+        title: 'Factura',
+        loadComponent: () =>
+          import('./factura/factura.component').then((m) => m.FacturaComponent),
+      },
+      {
         path: 'devoluciones',
         title: 'Devoluciones',
         loadComponent: () =>

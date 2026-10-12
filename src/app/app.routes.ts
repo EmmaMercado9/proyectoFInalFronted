@@ -57,6 +57,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'configuracion/facturacion',
+        canActivate: [adminGuard],
+        title: 'Facturación',
+        loadComponent: () =>
+          import('./config-facturacion/config-facturacion.component').then(
+            (m) => m.ConfigFacturacionComponent
+          ),
+      },
+      {
         path: 'facturas/:id',
         title: 'Factura',
         loadComponent: () =>

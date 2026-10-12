@@ -1,0 +1,208 @@
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <div class="max-w-3xl mx-auto pt-6 space-y-4">
+    <div>
+      <h2 class="text-2xl font-bold text-black">Facturación electrónica</h2>
+      <p class="text-sm text-gray-400 mt-0.5">Datos del negocio y certificado de ARCA</p>
+    </div>
+
+    @if (cargando && !config) {
+      <div class="flex justify-center py-16"><i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i></div>
+    } @else if (config) {
+      <!-- ══ Estado ═══════════════════════════════════════════════════════ -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <div class="flex items-center gap-2 mb-3">
+          @if (config.ambiente === 'HOMOLOGACION') {
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
+              Modo prueba (homologación)
+            </span>
+          } @else {
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-700">
+              Producción {{ config.produccionBloqueada ? '(bloqueada)' : '' }}
+            </span>
+          }
+          @if (listo) {
+            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">
+              Lista para facturar
+            </span>
+          }
+        </div>
+        @if (config.ambiente === 'HOMOLOGACION') {
+          <p class="text-xs text-gray-500">
+            Los comprobantes van al servidor de pruebas de ARCA: no tienen validez fiscal ni suman a tu
+            facturación. El pase a facturación real solo se habilita desde el servidor.
+          </p>
+        }
+        @if (config.faltantes?.length) {
+          <p class="text-xs font-semibold text-gray-600 mt-3 mb-1">Para poder facturar falta:</p>
+          <ul class="space-y-1">
+            @for (f of config.faltantes; track f) {
+              <li class="text-xs text-gray-600 flex items-start gap-2">
+                <i class="pi pi-circle text-[8px] mt-1 text-gray-300"></i>{{ f }}
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      <!-- ══ 1. Datos del negocio ═════════════════════════════════════════ -->
+      <form class="bg-white border border-gray-200 rounded-2xl p-5" (ngSubmit)="guardar()">
+        <p class="text-sm font-bold text-black mb-4">1. Datos del negocio</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="cuit" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">CUIT *</label>
+            <input id="cuit" name="cuit" type="number" [(ngModel)]="form.cuit" placeholder="Sin guiones"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+          </div>
+          <div>
+            <label for="pv" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Punto de venta *</label>
+            <input id="pv" name="pv" type="number" min="1" [(ngModel)]="form.puntoVenta" placeholder="Ej: 1"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="rs" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Nombre o razón social *</label>
+            <input id="rs" name="rs" [(ngModel)]="form.razonSocial"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+          </div>
+          <div class="sm:col-span-2">
+            <label for="dom" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Domicilio comercial</label>
+            <input id="dom" name="dom" [(ngModel)]="form.domicilio"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+          </div>
+          <div>
+            <label for="iibb" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Ingresos Brutos</label>
+            <input id="iibb" name="iibb" [(ngModel)]="form.iibb"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+          </div>
+          <div>
+            <label for="ini" class="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Inicio de actividades</label>
+            <input id="ini" name="ini" [(ngModel)]="form.inicioActividades" placeholder="dd/mm/aaaa"
+              class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
+          </div>
+          <div class="sm:col-span-2 text-xs text-gray-500">
+            Condición frente al IVA: <b class="text-black">{{ config.condicionIva }}</b> (emite Factura C)
+          </div>
+          <label class="sm:col-span-2 flex items-center gap-2 text-sm cursor-pointer select-none">
+            <input type="checkbox" name="hab" [(ngModel)]="form.habilitada" class="accent-black w-4 h-4" />
+            Facturación activada (muestra el botón "Facturar" en las ventas)
+          </label>
+        </div>
+        <div class="flex items-center justify-between mt-5">
+          <p class="text-[11px] text-gray-400">
+            @if (config.actualizadoEn) {
+              Última modificación: {{ config.actualizadoEn | date: 'dd/MM/yyyy HH:mm' }} · {{ config.actualizadoPor }}
+            }
+          </p>
+          <button type="submit" [disabled]="guardando"
+            class="px-4 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50">
+            {{ guardando ? 'Guardando...' : 'Guardar datos' }}
+          </button>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-3">
+          Las facturas ya emitidas conservan los datos con los que salieron.
+        </p>
+      </form>
+
+      <!-- ══ 2. Certificado ═══════════════════════════════════════════════ -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <p class="text-sm font-bold text-black mb-1">2. Certificado de ARCA</p>
+
+        @if (config.archivosDelServidor) {
+          <p class="text-xs text-gray-500">El certificado lo define el servidor (variables de entorno).</p>
+        } @else {
+          <!-- Estado del certificado -->
+          @if (config.certificadoSujeto) {
+            <div class="my-3 border rounded-xl p-3 text-xs"
+              [class.border-green-200]="config.certificadoCoincide" [class.bg-green-50]="config.certificadoCoincide"
+              [class.border-red-200]="!config.certificadoCoincide" [class.bg-red-50]="!config.certificadoCoincide">
+              <p class="font-semibold text-black">
+                <i class="pi" [class.pi-check-circle]="config.certificadoCoincide" [class.pi-times-circle]="!config.certificadoCoincide"></i>
+                Certificado instalado
+              </p>
+              <p class="text-gray-600 mt-1">CUIT {{ config.certificadoCuit }} · vence {{ config.certificadoVence | date: 'dd/MM/yyyy' }}</p>
+              <p class="text-gray-400 break-all">{{ config.certificadoSujeto }}</p>
+            </div>
+          }
+
+          <ol class="space-y-5 mt-3">
+            <!-- Paso A -->
+            <li>
+              <p class="text-sm font-semibold text-black">a) Generar el pedido de certificado (CSR)</p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Se crea una clave privada que queda guardada en el servidor (nunca se descarga) y un archivo
+                <b>arca.csr</b> para subir a ARCA.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <button type="button" (click)="generarCsr()" [disabled]="generando || !datosGuardados"
+                  class="px-3 py-2 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 disabled:opacity-40">
+                  @if (generando) { <i class="pi pi-spin pi-spinner text-[10px]"></i> }
+                  {{ config.claveGenerada ? 'Generar uno nuevo' : 'Generar pedido de certificado' }}
+                </button>
+                @if (csrTexto) {
+                  <button type="button" (click)="descargarCsr()" class="px-3 py-2 border border-gray-200 text-xs font-semibold rounded-lg hover:bg-gray-50">
+                    <i class="pi pi-download text-[10px]"></i> Descargar arca.csr
+                  </button>
+                  <button type="button" (click)="copiarCsr()" class="px-3 py-2 border border-gray-200 text-xs font-semibold rounded-lg hover:bg-gray-50">
+                    <i class="pi pi-copy text-[10px]"></i> Copiar
+                  </button>
+                }
+              </div>
+              @if (!datosGuardados) {
+                <p class="text-[11px] text-amber-700 mt-1">Primero guardá el CUIT y el nombre o razón social.</p>
+              }
+            </li>
+
+            <!-- Paso B -->
+            <li>
+              <p class="text-sm font-semibold text-black">b) Pedir el certificado en ARCA (con tu clave fiscal)</p>
+              <ol class="text-xs text-gray-600 mt-1 space-y-1 list-decimal ml-4">
+                <li>Entrá a <b>arca.gob.ar</b> con tu CUIT y clave fiscal.</li>
+                <li>En "Administrador de Relaciones de Clave Fiscal" adherí el servicio
+                  <b>WSASS – Autogestión Certificados Homologación</b> (solo la primera vez).</li>
+                <li>Abrí <b>WSASS</b> → "Nuevo certificado": poné un nombre (ej. <i>tienda</i>) y pegá el contenido de
+                  <b>arca.csr</b> (botón "Copiar"). Guardá el certificado que te devuelve como <b>.crt</b>.</li>
+                <li>En WSASS → "Crear autorización a servicio": elegí ese certificado y el servicio
+                  <b>wsfe – Facturación Electrónica</b>.</li>
+              </ol>
+            </li>
+
+            <!-- Paso C -->
+            <li>
+              <p class="text-sm font-semibold text-black">c) Subir el certificado</p>
+              <div class="flex flex-wrap items-center gap-2 mt-2">
+                <label class="px-3 py-2 border border-gray-200 text-xs font-semibold rounded-lg hover:bg-gray-50 cursor-pointer"
+                  [class.opacity-40]="!config.claveGenerada">
+                  <i class="pi pi-upload text-[10px]"></i> Elegir archivo .crt
+                  <input type="file" accept=".crt,.pem,.cer,.txt" class="hidden" [disabled]="!config.claveGenerada"
+                    (change)="onArchivoCertificado($event)" />
+                </label>
+                <span class="text-xs text-gray-500">{{ certificadoArchivo }}</span>
+              </div>
+              <textarea [(ngModel)]="certificadoPem" rows="3" [disabled]="!config.claveGenerada"
+                placeholder="...o pegá acá el texto que empieza con -----BEGIN CERTIFICATE-----"
+                class="mt-2 w-full border border-gray-200 rounded-xl px-3 py-2 text-[11px] font-mono resize-none focus:outline-none focus:ring-2 focus:ring-black disabled:bg-gray-50"></textarea>
+              <button type="button" (click)="instalarCertificado()" [disabled]="instalando || !certificadoPem.trim()"
+                class="mt-2 px-3 py-2 bg-black text-white text-xs font-semibold rounded-lg hover:bg-gray-800 disabled:opacity-40">
+                @if (instalando) { <i class="pi pi-spin pi-spinner text-[10px]"></i> }
+                Verificar e instalar
+              </button>
+            </li>
+          </ol>
+        }
+      </div>
+
+      <!-- ══ 3. Probar ════════════════════════════════════════════════════ -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 flex items-center justify-between gap-4">
+        <div>
+          <p class="text-sm font-bold text-black">3. Probar conexión con ARCA</p>
+          <p class="text-xs text-gray-500">Verifica los servidores y, si está todo cargado, el certificado.</p>
+        </div>
+        <button type="button" (click)="probar()" [disabled]="probando"
+          class="px-4 py-2.5 border border-gray-200 text-sm font-semibold rounded-xl hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap">
+          @if (probando) { <i class="pi pi-spin pi-spinner text-xs"></i> } Probar
+        </button>
+      </div>
+    }
+  </div>
+</section>
+
+<p-confirmDialog></p-confirmDialog>

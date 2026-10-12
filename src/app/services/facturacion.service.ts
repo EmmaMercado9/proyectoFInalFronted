@@ -14,6 +14,31 @@ export interface EstadoFacturacion {
   mensaje?: string;
 }
 
+/** Configuración → Facturación (solo ADMIN) */
+export interface ConfiguracionFacturacion {
+  habilitada: boolean;
+  cuit: number | null;
+  puntoVenta: number | null;
+  razonSocial: string | null;
+  domicilio: string | null;
+  iibb: string | null;
+  inicioActividades: string | null;
+  // solo lectura
+  condicionIva?: string;
+  ambiente?: 'HOMOLOGACION' | 'PRODUCCION';
+  produccionBloqueada?: boolean;
+  archivosDelServidor?: boolean;
+  claveGenerada?: boolean;
+  csrDisponible?: boolean;
+  certificadoSujeto?: string;
+  certificadoCuit?: number;
+  certificadoVence?: string;
+  certificadoCoincide?: boolean;
+  faltantes?: string[];
+  actualizadoPor?: string;
+  actualizadoEn?: string;
+}
+
 export interface FacturaItem {
   descripcion: string;
   cantidad: number;
@@ -100,12 +125,39 @@ export class FacturacionService {
   private readonly API = `${environment.apiUrl}/api/admin`;
   private estado$?: Observable<EstadoFacturacion>;
 
-  /** Se cachea: la configuración no cambia sin reiniciar el backend */
+  /** Se cachea; se invalida al cambiar la configuración desde el panel */
   estado(): Observable<EstadoFacturacion> {
     this.estado$ ??= this.http
       .get<EstadoFacturacion>(`${this.API}/facturacion/estado`)
       .pipe(shareReplay(1));
     return this.estado$;
+  }
+
+  // ── Configuración (ADMIN) ──────────────────────────────────────────────
+  config(): Observable<ConfiguracionFacturacion> {
+    return this.http.get<ConfiguracionFacturacion>(`${this.API}/facturacion/config`);
+  }
+
+  guardarConfig(c: ConfiguracionFacturacion): Observable<ConfiguracionFacturacion> {
+    this.estado$ = undefined; // el estado cambia con la configuración
+    return this.http.put<ConfiguracionFacturacion>(`${this.API}/facturacion/config`, c);
+  }
+
+  /** Genera clave (queda en el servidor) + CSR; devuelve el CSR en texto */
+  generarCsr(reemplazar = false): Observable<string> {
+    this.estado$ = undefined;
+    return this.http.post(`${this.API}/facturacion/csr?reemplazar=${reemplazar}`, null, {
+      responseType: 'text',
+    });
+  }
+
+  csr(): Observable<string> {
+    return this.http.get(`${this.API}/facturacion/csr`, { responseType: 'text' });
+  }
+
+  instalarCertificado(pem: string): Observable<ConfiguracionFacturacion> {
+    this.estado$ = undefined;
+    return this.http.post<ConfiguracionFacturacion>(`${this.API}/facturacion/certificado`, { pem });
   }
 
   probar(): Observable<EstadoFacturacion> {

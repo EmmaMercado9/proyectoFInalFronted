@@ -105,12 +105,11 @@
         <i class="pi pi-file-check text-sm"></i> Facturar (Factura C)
       </button>
     } @else if (estado && !estado.habilitada) {
-      <p class="text-sm text-gray-400">La facturación electrónica no está configurada.</p>
+      <p class="text-sm text-gray-400">La facturación electrónica todavía no está lista.</p>
       @if (esAdmin) {
-        <p class="text-xs text-gray-400 mt-1">
-          Falta: <span class="font-mono">{{ estado.faltantes.join(', ') }}</span> (ver
-          FACTURACION-ARCA.md en el backend).
-        </p>
+        <a routerLink="/admin/configuracion/facturacion" class="inline-flex items-center gap-1 mt-1 text-xs font-semibold text-black hover:underline">
+          Ir a Configuración → Facturación <i class="pi pi-arrow-right text-[10px]"></i>
+        </a>
       }
     } @else {
       <p class="text-sm text-gray-400">Esta venta no se puede facturar ({{ orden.status | lowercase }}).</p>

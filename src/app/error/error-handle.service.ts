@@ -51,8 +51,16 @@ export class ErrorHandleService {
   }
 
   private extractDetail(error: any): string | null {
-    const body = error?.error;
+    let body = error?.error;
     if (!body) return null;
+    // Pedidos con responseType 'text': el ApiError llega como JSON en texto
+    if (typeof body === 'string' && body.trim().startsWith('{')) {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        /* queda como texto */
+      }
+    }
     // El login y algunos endpoints viejos devuelven texto plano
     if (typeof body === 'string') return body.length < 200 ? body : null;
 

@@ -149,6 +149,21 @@
           </a>
         </div>
       </div>
+
+      <!-- Configuración (solo ADMIN) -->
+      <ng-container *ngIf="esAdmin">
+        <p class="px-3 pt-3 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+          Configuración
+        </p>
+        <a
+          routerLink="/admin/configuracion/facturacion"
+          routerLinkActive="bg-gray-100 text-black font-semibold"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+        >
+          <i class="pi pi-file-check text-sm w-4 text-center"></i>
+          Facturación
+        </a>
+      </ng-container>
     </nav>
 
     <!-- Usuario en el pie del sidebar -->
@@ -400,6 +415,17 @@
       >
         <i class="pi pi-folder text-sm w-4 text-center"></i>
         Categorías
+      </a>
+
+      <a
+        *ngIf="esAdmin"
+        routerLink="/admin/configuracion/facturacion"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-file-check text-sm w-4 text-center"></i>
+        Facturación
       </a>
     </nav>
 

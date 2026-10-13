@@ -234,6 +234,11 @@ export class AddProductComponent implements OnInit {
     return this.formProduct.get('listVariants') as FormArray;
   }
 
+  /** Prefijo del SKU de las variantes (el SKU del producto) */
+  get skuBase(): string {
+    return (this.formProduct.get('sku')?.value || 'VAR').toString().trim().toUpperCase();
+  }
+
   get tieneVariantes(): boolean {
     return this.formProduct.get('tieneVariantes')?.value ?? false;
   }
@@ -427,6 +432,8 @@ export class AddProductComponent implements OnInit {
     if (this.edit) return;
     const nuevo = !this.tieneVariantes;
     this.formProduct.patchValue({ tieneVariantes: nuevo });
+    // Con variantes el código de barras va en cada una, no en el producto
+    if (nuevo) this.formProduct.patchValue({ codigoBarra: '' });
     this.actualizarValidadoresPrecio();
     if (!nuevo) {
       this.listVariants.clear();
@@ -697,7 +704,7 @@ export class AddProductComponent implements OnInit {
       combinaciones = nuevas;
     }
 
-    const skuBase = (this.formProduct.get('sku')?.value ?? 'VAR').toString();
+    const skuBase = this.skuBase;
 
     // Las variantes ya guardadas (con variantId) se conservan: el backend no
     // permite borrarlas ni cambiar sus atributos. Solo se regeneran las nuevas.
@@ -776,7 +783,7 @@ export class AddProductComponent implements OnInit {
 
     const dto: ProductRequest = {
       nameProduct: val.nameProduct,
-      codigoBarra: val.codigoBarra || undefined,
+      codigoBarra: (!val.tieneVariantes && val.codigoBarra) || undefined,
       sku: val.sku || undefined,
       description: val.description || undefined,
       marca: val.marca,
@@ -1045,7 +1052,8 @@ export class AddProductComponent implements OnInit {
 
     const dto: ProductUpdateRequest = {
       nameProduct: val.nameProduct,
-      codigoBarra: val.codigoBarra || undefined,
+      // Con variantes se manda vacío: borra un código viejo del producto
+      codigoBarra: (!val.tieneVariantes && val.codigoBarra) || undefined,
       sku: val.sku || undefined,
       description: val.description || undefined,
       marca: val.marca,

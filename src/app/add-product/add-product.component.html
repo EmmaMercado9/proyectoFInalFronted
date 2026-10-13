@@ -99,8 +99,8 @@
           />
         </div>
 
-        <!-- SKU -->
-        <div>
+        <!-- SKU y código: con variantes van en cada variante (el SKU base, abajo) -->
+        <div *ngIf="!tieneVariantes">
           <label
             class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
           >
@@ -115,7 +115,7 @@
         </div>
 
         <!-- Código de barra -->
-        <div>
+        <div *ngIf="!tieneVariantes">
           <label
             class="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide"
           >
@@ -478,8 +478,27 @@
       </div>
       <p class="text-xs text-gray-400 mb-4 ml-9">
         Elegí atributos para generar las combinaciones. Cada variante lleva su
-        propio precio de venta y costo.
+        propio SKU, código de barras, precio de venta y costo.
       </p>
+
+      <!-- SKU base: prefijo del SKU de cada variante -->
+      <div class="mb-4 ml-9 flex flex-wrap items-center gap-3">
+        <label for="skuBase" class="text-[10px] font-semibold text-gray-500 uppercase">
+          SKU base
+        </label>
+        <input
+          id="skuBase"
+          formControlName="sku"
+          type="text"
+          placeholder="REM-BAS"
+          class="w-40 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
+        />
+        <span class="text-[11px] text-gray-400">
+          Las variantes nuevas se arman como
+          <span class="font-mono">{{ skuBase }}-S</span>,
+          <span class="font-mono">{{ skuBase }}-ROJO</span>…
+        </span>
+      </div>
 
       <!-- Empty state -->
       <div

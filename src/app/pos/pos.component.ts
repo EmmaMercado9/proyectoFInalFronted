@@ -8,7 +8,6 @@ import {
   inject,
   ElementRef,
   ViewChild,
-  HostListener,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -29,6 +28,8 @@ import { UserService } from '../services/user.service';
 import { ClientService, ClienteDTO } from '../services/client.service';
 import { FacturacionService } from '../services/facturacion.service';
 import { ErrorHandleService } from '../error/error-handle.service';
+import { EscanerService } from '../shared/escaner/escaner.service';
+import { EscanerToggleComponent } from '../shared/escaner/escaner-toggle.component';
 
 // ─── Interfaces locales ───────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ export interface PosItem {
   selector: 'app-pos',
   standalone: true,
   templateUrl: './pos.component.html',
-  imports: [CommonModule, FormsModule, RouterModule, ToastModule],
+  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent],
 })
 export class PosComponent implements OnInit, OnDestroy {
   @ViewChild('buscarInput') buscarInput!: ElementRef;
@@ -104,11 +105,6 @@ export class PosComponent implements OnInit, OnDestroy {
     { value: 'MERCADOPAGO', label: 'MP', icon: 'pi-mobile' },
   ];
 
-  // ─── Escáner código de barras ───────────────────────────────────────────
-  private codigoBarras = '';
-  private ultimaTecla = 0;
-  private readonly VEL_SCANNER = 50;
-
   // ─── Debounces ──────────────────────────────────────────────────────────
   private searchSubject = new Subject<string>();
   private clienteSubject = new Subject<string>();
@@ -123,6 +119,7 @@ export class PosComponent implements OnInit, OnDestroy {
   private message = inject(MessageService);
   private facturacion = inject(FacturacionService);
   private errorService = inject(ErrorHandleService);
+  private escaner = inject(EscanerService);
 
   // ─── Facturación al vender (opcional, se recuerda la elección) ──────────
   facturacionLista = false;
@@ -162,7 +159,15 @@ export class PosComponent implements OnInit, OnDestroy {
     this.subs.push(
       this.searchSubject
         .pipe(debounceTime(350), distinctUntilChanged())
-        .subscribe((q) => this.buscarProductos(q))
+        .subscribe((q) => {
+          // '' llega cuando se borra el texto (o el lector lo saca del campo)
+          if (q) this.buscarProductos(q);
+        })
+    );
+
+    // Pistola lectora: solo con la casilla "Lector de códigos" tildada
+    this.subs.push(
+      this.escaner.codigos$.subscribe((codigo) => this.buscarPorCodigoBarra(codigo))
     );
 
     this.subs.push(
@@ -179,32 +184,6 @@ export class PosComponent implements OnInit, OnDestroy {
 
   // ─── Escáner ────────────────────────────────────────────────────────────
 
-  // HostListener se registra y se libera solo con el componente
-  // (antes el listener manual nunca se removía y se duplicaba en cada visita)
-  @HostListener('document:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    const target = event.target as HTMLElement;
-    const enInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
-
-    const ahora = Date.now();
-    const delta = ahora - this.ultimaTecla;
-    this.ultimaTecla = ahora;
-
-    if (event.key === 'Enter') {
-      if (this.codigoBarras.length >= 4 && delta < this.VEL_SCANNER * 3) {
-        this.buscarPorCodigoBarra(this.codigoBarras);
-      }
-      this.codigoBarras = '';
-      return;
-    }
-
-    if (delta < this.VEL_SCANNER && event.key.length === 1) {
-      this.codigoBarras += event.key;
-    } else if (!enInput) {
-      this.codigoBarras = event.key.length === 1 ? event.key : '';
-    }
-  }
-
   buscarPorCodigoBarra(codigo: string): void {
     this.productService
       .buscarPorBarcode(codigo)
@@ -219,6 +198,17 @@ export class PosComponent implements OnInit, OnDestroy {
         if (data.tipo === 'VARIANTE') {
           const v = data.variante;
           const p = data.producto;
+          if (v.status === 'INACTIVO' || p.status === 'INACTIVO') {
+            this.escaner.pitido(false);
+            this.message.add({
+              severity: 'warn',
+              summary: 'Producto desactivado',
+              detail: `${p.nameProduct} — ${v.descripcion ?? v.sku} no está a la venta`,
+              life: 3000,
+            });
+            return;
+          }
+          this.escaner.pitido(v.stock > 0);
           const imgs = v.imageModelSetDto ?? v.imagenes ?? [];
           this.agregarItem({
             variantId: v.variantId,
@@ -240,11 +230,22 @@ export class PosComponent implements OnInit, OnDestroy {
         }
 
         if (data.tipo === 'PRODUCTO') {
+          this.escaner.pitido(data.producto.status !== 'INACTIVO');
+          if (data.producto.status === 'INACTIVO') {
+            this.message.add({
+              severity: 'warn',
+              summary: 'Producto desactivado',
+              detail: `${data.producto.nameProduct} no está a la venta`,
+              life: 3000,
+            });
+            return;
+          }
           this.seleccionarProducto(data.producto);
           return;
         }
 
         if (data.content !== undefined) {
+          this.escaner.pitido(data.content.length > 0);
           if (data.content.length === 0) {
             this.message.add({
               severity: 'warn',
@@ -269,7 +270,6 @@ export class PosComponent implements OnInit, OnDestroy {
     if (!this.busqueda.trim()) {
       this.resultados = [];
       this.mostrarResultados = false;
-      return;
     }
     this.searchSubject.next(this.busqueda.trim());
   }

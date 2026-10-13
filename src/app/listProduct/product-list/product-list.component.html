@@ -11,14 +11,17 @@
         total
       </p>
     </div>
-    <button
-      *ngIf="esAdmin"
-      routerLink="/admin/formProduct/new"
-      class="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition self-start sm:self-auto"
-    >
-      <i class="pi pi-plus text-xs"></i>
-      Nuevo producto
-    </button>
+    <div class="flex items-center gap-3 self-start sm:self-auto">
+      <app-escaner-toggle></app-escaner-toggle>
+      <button
+        *ngIf="esAdmin"
+        routerLink="/admin/formProduct/new"
+        class="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition"
+      >
+        <i class="pi pi-plus text-xs"></i>
+        Nuevo producto
+      </button>
+    </div>
   </div>
 
   <!-- ══ Métricas ══════════════════════════════════════════════════════════ -->
@@ -113,6 +116,86 @@
       </button>
     </div>
   </div>
+
+  <!-- ══ Último código escaneado ═══════════════════════════════════════════ -->
+  @if (escaneado; as e) {
+    <div
+      class="max-w-6xl mx-auto bg-white border-2 border-black rounded-2xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-4"
+    >
+      <div
+        class="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center"
+      >
+        @if (escaneadoImagen) {
+          <img [src]="escaneadoImagen" [alt]="e.producto.nameProduct" class="w-full h-full object-cover" />
+        } @else {
+          <i class="pi pi-barcode text-gray-300 text-xl"></i>
+        }
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <p class="text-[10px] uppercase tracking-wide text-gray-400">
+          Código escaneado · <span class="font-mono">{{ e.codigo }}</span>
+        </p>
+        <p class="text-base font-bold text-black truncate">{{ e.producto.nameProduct }}</p>
+        <p class="text-xs text-gray-500">
+          @if (e.variante && !e.variante.esDefault) {
+            {{ e.variante.descripcion }} ·
+          }
+          SKU <span class="font-mono">{{ e.variante?.sku ?? e.producto.sku }}</span>
+          @if (e.producto.marca) {
+            · {{ e.producto.marca }}
+          }
+        </p>
+        @if (escaneadoInactivo) {
+          <span class="inline-block mt-1 text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+            Desactivado
+          </span>
+        }
+      </div>
+
+      <div class="flex gap-6 sm:text-right">
+        <div>
+          <p class="text-[10px] text-gray-400">{{ e.variante ? 'Stock' : 'Stock total' }}</p>
+          <p
+            class="text-xl font-bold"
+            [class.text-red-500]="escaneadoStock === 0"
+            [class.text-amber-500]="escaneadoStock > 0 && escaneadoBajo"
+            [class.text-black]="escaneadoStock > 0 && !escaneadoBajo"
+          >
+            {{ escaneadoStock }} u.
+          </p>
+        </div>
+        <div>
+          <p class="text-[10px] text-gray-400">Precio</p>
+          <p class="text-xl font-bold text-black">{{ escaneadoPrecio | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button
+          (click)="verDetalle(e.producto.idProduct)"
+          class="px-3 py-2 border border-gray-200 rounded-xl text-xs font-semibold hover:bg-gray-50 transition"
+        >
+          Ver detalle
+        </button>
+        @if (esAdmin) {
+          <button
+            (click)="editar(e.producto.idProduct)"
+            class="px-3 py-2 bg-black text-white rounded-xl text-xs font-semibold hover:bg-gray-800 transition"
+          >
+            Editar
+          </button>
+        }
+        <button
+          (click)="escaneado = null"
+          class="px-2 py-2 text-gray-400 hover:text-black transition"
+          title="Cerrar"
+        >
+          <i class="pi pi-times text-xs"></i>
+        </button>
+      </div>
+    </div>
+  }
 
   <!-- ══ Contenido ═════════════════════════════════════════════════════════ -->
   <div class="max-w-6xl mx-auto">

@@ -1,16 +1,30 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { EMPTY, catchError, of, debounceTime, Subject } from 'rxjs';
-import { CategoryResponse, ProductListadoDTO } from '../../model/product.model';
+import { EMPTY, catchError, of, debounceTime, Subject, Subscription } from 'rxjs';
+import {
+  CategoryResponse,
+  ProductListadoDTO,
+  ProductResponse,
+  VarianteResponse,
+} from '../../model/product.model';
 import { ProductService } from '../../services/products.service';
 import { CatgoryService } from '../../services/catgory.service';
 import { UserService } from '../../services/user.service';
 import { ErrorHandleService } from '../../error/error-handle.service';
+import { EscanerService } from '../../shared/escaner/escaner.service';
+import { EscanerToggleComponent } from '../../shared/escaner/escaner-toggle.component';
+
+/** Lo último leído con la pistola */
+interface Escaneado {
+  codigo: string;
+  producto: ProductResponse;
+  variante?: VarianteResponse;
+}
 
 @Component({
   selector: 'app-product-list',
@@ -22,9 +36,10 @@ import { ErrorHandleService } from '../../error/error-handle.service';
     FormsModule,
     ToastModule,
     ConfirmDialogModule,
+    EscanerToggleComponent,
   ],
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent implements OnInit, OnDestroy {
   // ─── Datos ───────────────────────────────────────────────────────────────
   productos: ProductListadoDTO[] = [];
   listCategory: CategoryResponse[] = [];
@@ -47,6 +62,11 @@ export class ProductListComponent implements OnInit {
   // ─── Búsqueda con debounce ───────────────────────────────────────────────
   private searchSubject = new Subject<string>();
 
+  // ─── Lector de códigos ───────────────────────────────────────────────────
+  escaneado: Escaneado | null = null;
+  private escaner = inject(EscanerService);
+  private subs: Subscription[] = [];
+
   // ─── Inyecciones ─────────────────────────────────────────────────────────
   private productService = inject(ProductService);
   private categoryService = inject(CatgoryService);
@@ -65,10 +85,74 @@ export class ProductListComponent implements OnInit {
     this.cargarProductos();
 
     // Debounce en búsqueda — espera 400ms antes de buscar
-    this.searchSubject.pipe(debounceTime(400)).subscribe(() => {
-      this.page = 0;
-      this.cargarProductos();
-    });
+    this.subs.push(
+      this.searchSubject.pipe(debounceTime(400)).subscribe(() => {
+        this.page = 0;
+        this.cargarProductos();
+      })
+    );
+
+    // Pistola lectora: solo con la casilla "Lector de códigos" tildada
+    this.subs.push(this.escaner.codigos$.subscribe((c) => this.buscarPorCodigo(c)));
+  }
+
+  ngOnDestroy(): void {
+    this.subs.forEach((s) => s.unsubscribe());
+  }
+
+  // ─── Lector de códigos ───────────────────────────────────────────────────
+
+  /** Busca el código exacto (variante o producto); si no está, lo busca como texto */
+  buscarPorCodigo(codigo: string): void {
+    this.productService
+      .buscarPorBarcode(codigo)
+      .pipe(catchError(() => of(null)))
+      .subscribe((data: any) => {
+        if (data?.producto) {
+          this.escaner.pitido(true);
+          this.escaneado = { codigo, producto: data.producto, variante: data.variante };
+          return;
+        }
+        this.escaner.pitido(false);
+        this.escaneado = null;
+        this.message.add({
+          severity: 'warn',
+          summary: 'Código no registrado',
+          detail: `Ningún producto tiene el código ${codigo}. Se buscó como texto.`,
+          life: 4000,
+        });
+        this.busqueda = codigo;
+        this.statusFiltro = '';
+        this.page = 0;
+        this.cargarProductos();
+      });
+  }
+
+  /** Stock y precio de lo escaneado: los de la variante, o los del producto */
+  get escaneadoStock(): number {
+    const e = this.escaneado;
+    return e ? (e.variante?.stock ?? e.producto.stockTotal) : 0;
+  }
+
+  get escaneadoPrecio(): number {
+    const e = this.escaneado;
+    return e ? (e.variante?.precioVenta ?? e.producto.precioVenta) : 0;
+  }
+
+  get escaneadoBajo(): boolean {
+    const e = this.escaneado;
+    if (!e) return false;
+    return e.variante ? e.variante.stock <= e.variante.stockMinimo : e.producto.stockBajo;
+  }
+
+  get escaneadoImagen(): string | undefined {
+    const e = this.escaneado;
+    return e?.variante?.imageModelSetDto?.[0]?.url ?? e?.producto.imageModelSetDto?.[0]?.url;
+  }
+
+  get escaneadoInactivo(): boolean {
+    const e = this.escaneado;
+    return e?.producto.status === 'INACTIVO' || e?.variante?.status === 'INACTIVO';
   }
 
   // ─── Carga de datos ───────────────────────────────────────────────────────

@@ -1,0 +1,70 @@
+<div class="max-w-3xl mx-auto px-4 py-6 space-y-5">
+  <div>
+    <h1 class="text-xl font-bold text-black">Medios de pago</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      El precio cargado en los productos es el de lista. Acá definís el descuento por pagar en efectivo
+      y el recargo de cada plan de cuotas. Usá números negativos para descuentos (ej. −10) y positivos para recargos.
+    </p>
+  </div>
+
+  @if (cargando) {
+    <p class="text-sm text-gray-400"><i class="pi pi-spin pi-spinner mr-2"></i>Cargando…</p>
+  } @else {
+    <!-- Contado -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Pago en un solo pago</p>
+      <div class="divide-y divide-gray-100">
+        @for (p of medios; track p.medio) {
+          <div class="flex flex-wrap items-center gap-3 py-3">
+            <label class="flex items-center gap-2 w-44 text-sm font-medium text-black">
+              <input type="checkbox" [(ngModel)]="p.activo" class="accent-black w-4 h-4" />
+              {{ paymentLabel(p.medio) }}
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" step="0.5" min="-50" max="100" [(ngModel)]="p.porcentaje" [disabled]="!p.activo"
+                class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-right font-semibold focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-50" />
+              <span class="text-sm text-gray-500">%</span>
+            </div>
+            <span class="text-xs text-gray-400 min-w-0">
+              ${{ ejemplo | number: '1.0-0' }} → <b class="text-black">${{ totalEjemplo(p) | number: '1.0-2' }}</b>
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Tarjeta de crédito -->
+    <div class="bg-white border border-gray-200 rounded-2xl p-5">
+      <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Tarjeta de crédito en cuotas</p>
+      <div class="divide-y divide-gray-100">
+        @for (p of credito; track p.cuotas) {
+          <div class="flex flex-wrap items-center gap-3 py-3">
+            <label class="flex items-center gap-2 w-44 text-sm font-medium text-black">
+              <input type="checkbox" [(ngModel)]="p.activo" class="accent-black w-4 h-4" />
+              {{ p.cuotas === 1 ? '1 pago' : p.cuotas + ' cuotas' }}
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" step="0.5" min="-50" max="100" [(ngModel)]="p.porcentaje" [disabled]="!p.activo"
+                class="w-20 border border-gray-200 rounded-xl px-3 py-1.5 text-sm text-right font-semibold focus:outline-none focus:ring-1 focus:ring-black disabled:bg-gray-50" />
+              <span class="text-sm text-gray-500">%</span>
+            </div>
+            <span class="text-xs text-gray-400 min-w-0">
+              ${{ ejemplo | number: '1.0-0' }} → <b class="text-black">${{ totalEjemplo(p) | number: '1.0-2' }}</b>
+              @if (p.cuotas > 1) {
+                ({{ p.cuotas }} × ${{ totalEjemplo(p) / p.cuotas | number: '1.2-2' }})
+              }
+            </span>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <button (click)="guardar()" [disabled]="guardando"
+        class="px-5 py-2.5 bg-black hover:bg-gray-800 text-white text-sm font-bold rounded-xl transition disabled:opacity-50">
+        <i class="pi text-xs mr-1" [class.pi-spin]="guardando" [class.pi-spinner]="guardando" [class.pi-check]="!guardando"></i>
+        Guardar
+      </button>
+    </div>
+  }
+</div>

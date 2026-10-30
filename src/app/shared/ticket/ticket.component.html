@@ -90,16 +90,21 @@
   <div class="tk-sep"></div>
 
   <!-- Totales -->
-  @if (!factura && orden && orden.discount > 0) {
+  @if (!factura && orden && (orden.discount > 0 || orden.ajusteMedioPago)) {
     <div class="tk-fila"><span>Subtotal</span><span>{{ orden.subtotal | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span></div>
-    <div class="tk-fila"><span>Descuento</span><span>-{{ orden.discount | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span></div>
+    @if (orden.discount > 0) {
+      <div class="tk-fila"><span>Descuento</span><span>-{{ orden.discount | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span></div>
+    }
+    @if (orden.ajusteMedioPago) {
+      <div class="tk-fila"><span>{{ ajusteMedioLabel(orden) }}</span><span>{{ orden.ajusteMedioPago < 0 ? '-' : '+' }}{{ (orden.ajusteMedioPago < 0 ? -orden.ajusteMedioPago : orden.ajusteMedioPago) | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span></div>
+    }
   }
   <div class="tk-fila tk-total">
     <span>TOTAL</span>
     <span>{{ total | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</span>
   </div>
   @if (orden && !esNotaCredito) {
-    <div class="tk-fila"><span>Pago:</span><span>{{ paymentLabel(orden.payment) }}</span></div>
+    <div class="tk-fila"><span>Pago:</span><span>{{ pagoConCuotas(orden) }}</span></div>
   }
 
   <div class="tk-sep"></div>

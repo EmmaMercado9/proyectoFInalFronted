@@ -46,6 +46,26 @@ export function paymentLabel(payment?: string | null): string {
   return payment ? (PAYMENT_LABEL[payment] ?? payment) : '—';
 }
 
+/** "Tarjeta crédito · 6 cuotas" */
+export function pagoConCuotas(orden: { payment?: string | null; cuotas?: number | null }): string {
+  const cuotas = orden.cuotas ?? 1;
+  return paymentLabel(orden.payment) + (cuotas > 1 ? ` · ${cuotas} cuotas` : '');
+}
+
+/** "Descuento efectivo (−10 %)" / "Recargo 6 cuotas (+15 %)" */
+export function ajusteMedioLabel(orden: {
+  payment?: string | null;
+  cuotas?: number | null;
+  ajustePorcentaje?: number | null;
+  ajusteMedioPago?: number | null;
+}): string {
+  const pct = orden.ajustePorcentaje ?? 0;
+  const signo = pct > 0 ? '+' : '−';
+  return (orden.ajusteMedioPago ?? 0) < 0
+    ? `Descuento ${paymentLabel(orden.payment).toLowerCase()} (${signo}${Math.abs(pct)} %)`
+    : `Recargo ${orden.cuotas ?? 1} cuotas (${signo}${Math.abs(pct)} %)`;
+}
+
 export function formaReintegroLabel(forma?: string | null, paymentOriginal?: string | null): string {
   if (forma === 'EFECTIVO') return 'Efectivo';
   if (forma === 'MISMO_MEDIO') return `Mismo medio (${paymentLabel(paymentOriginal)})`;

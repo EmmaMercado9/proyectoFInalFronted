@@ -28,7 +28,9 @@ import {
 import { Factura } from '../services/facturacion.service';
 import {
   admiteDevolucion,
+  ajusteMedioLabel,
   formaReintegroLabel,
+  pagoConCuotas,
   paymentLabel,
   statusClass,
   statusLabel,
@@ -68,6 +70,8 @@ export class ComprobanteComponent implements OnInit {
   readonly getStatusLabel = statusLabel;
   readonly getStatusClass = statusClass;
   readonly getPaymentLabel = paymentLabel;
+  readonly pagoConCuotas = pagoConCuotas;
+  readonly ajusteMedioLabel = ajusteMedioLabel;
   readonly formaReintegroLabel = formaReintegroLabel;
 
   ngOnInit(): void {

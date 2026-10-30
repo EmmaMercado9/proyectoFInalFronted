@@ -1,0 +1,257 @@
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <!-- Cabecera -->
+  <div class="max-w-5xl mx-auto pt-6 mb-5">
+    <h2 class="text-xl font-bold text-black">Importar factura de proveedor</h2>
+    <p class="text-xs text-gray-400 mt-0.5">
+      Cargá los productos y el stock desde el PDF de la factura. Formatos disponibles: Adidas Argentina y
+      Factory Sport (Seven Sport).
+    </p>
+  </div>
+
+  <!-- Resultado -->
+  @if (resultado; as r) {
+    <div class="max-w-5xl mx-auto bg-white border border-green-200 rounded-2xl p-6 text-center">
+      <i class="pi pi-check-circle text-4xl text-green-500"></i>
+      <p class="text-base font-bold text-black mt-2">Factura importada</p>
+      <p class="text-sm text-gray-500 mt-1">
+        {{ r.unidades }} unidades · {{ r.productosCreados }} productos nuevos · {{ r.variantesCreadas }} talles
+        nuevos · stock sumado en {{ r.variantesConStockSumado }} talles existentes
+      </p>
+      <div class="flex justify-center gap-2 mt-4">
+        <button (click)="irAlInventario()" class="px-4 py-2 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition">
+          Ver inventario
+        </button>
+        <button (click)="otra()" class="px-4 py-2 border border-gray-200 text-sm font-semibold rounded-xl hover:bg-gray-50 transition">
+          Importar otra factura
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mt-4">
+        Tip: con el "Lector de códigos" del inventario podés escanear las cajas para cargar los códigos de barras.
+      </p>
+    </div>
+  } @else {
+    <!-- Zona para soltar / elegir el PDF -->
+    <label
+      class="max-w-5xl mx-auto flex flex-col items-center justify-center gap-2 bg-white border-2 border-dashed rounded-2xl p-8 cursor-pointer transition"
+      [class.border-black]="arrastrando"
+      [class.border-gray-200]="!arrastrando"
+      (dragover)="$event.preventDefault(); arrastrando = true"
+      (dragleave)="arrastrando = false"
+      (drop)="soltar($event)"
+    >
+      <input type="file" accept="application/pdf,.pdf" class="hidden" (change)="elegir($event)" />
+      @if (leyendo) {
+        <i class="pi pi-spin pi-spinner text-2xl text-gray-400"></i>
+        <p class="text-sm text-gray-500">Leyendo {{ archivo?.name }}…</p>
+      } @else {
+        <i class="pi pi-file-pdf text-3xl text-gray-300"></i>
+        <p class="text-sm font-semibold text-black">
+          {{ archivo ? archivo.name : 'Arrastrá el PDF de la factura o hacé clic para elegirlo' }}
+        </p>
+        <p class="text-xs text-gray-400">No se guarda nada hasta que confirmes.</p>
+      }
+    </label>
+
+    @if (vista; as v) {
+      <!-- Encabezado de la factura -->
+      <div class="max-w-5xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mt-4">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-bold text-black">{{ v.proveedor }}</p>
+            <p class="text-xs text-gray-500">CUIT {{ v.cuit }} · Factura N° {{ v.numero }} · {{ v.fecha | date: 'dd/MM/yyyy' }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-xs text-gray-400">Total de la factura</p>
+            <p class="text-lg font-bold text-black">{{ v.total | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</p>
+            <p class="text-xs text-gray-500">{{ v.modelos.length }} modelos · {{ v.unidades }} unidades</p>
+          </div>
+        </div>
+
+        @if (v.yaImportada) {
+          <div class="mt-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <i class="pi pi-ban mr-1"></i> {{ v.yaImportada }}
+          </div>
+        } @else if (v.totalCoincide) {
+          <div class="mt-4 rounded-xl bg-green-50 border border-green-200 px-4 py-2 text-xs text-green-700">
+            <i class="pi pi-check mr-1"></i> La suma de los productos coincide con el total: se leyeron todos los renglones.
+          </div>
+        } @else {
+          <div class="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800">
+            <i class="pi pi-exclamation-triangle mr-1"></i>
+            La suma de los productos ({{ v.sumaLineas | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}) no coincide con el
+            total ({{ v.total | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}): puede faltar algún renglón.
+            <label class="flex items-center gap-2 mt-2 font-semibold cursor-pointer">
+              <input type="checkbox" [(ngModel)]="revisoDiferencia" class="accent-black" />
+              Revisé la factura y quiero importar igual
+            </label>
+          </div>
+        }
+
+        @if (productosNuevos > 0) {
+          <div class="flex flex-wrap items-center gap-2 mt-4">
+            <span class="text-xs text-gray-500">Subcategoría para los {{ productosNuevos }} productos nuevos:</span>
+            <select
+              [(ngModel)]="subcategoriaGeneral"
+              (ngModelChange)="aplicarSubcategoria()"
+              class="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white"
+            >
+              <option [ngValue]="null">Sin subcategoría</option>
+              @for (s of subcategorias; track s.subId) {
+                <option [ngValue]="s.subId">{{ s.etiqueta }}</option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+
+      <!-- Modelos -->
+      @for (m of v.modelos; track m.codigoArticulo) {
+        <div class="max-w-5xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mt-3">
+          <div class="flex flex-wrap items-start gap-3">
+            <div class="flex-1 min-w-[240px]">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs text-gray-500">{{ m.codigoArticulo }}</span>
+                @if (esNuevo(m)) {
+                  <span class="text-[10px] bg-black text-white px-2 py-0.5 rounded-full">Nuevo</span>
+                } @else {
+                  <span class="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Ya existe: {{ m.productoExistente }}</span>
+                }
+              </div>
+              @if (esNuevo(m)) {
+                <input
+                  [(ngModel)]="m.nombre"
+                  class="mt-1 w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-black"
+                />
+              } @else {
+                <p class="mt-1 text-sm font-semibold text-black">{{ m.productoExistente }}</p>
+              }
+              <p class="text-xs text-gray-400 mt-1">{{ m.marca || 'Sin marca' }} · {{ unidades(m) }} unidades</p>
+            </div>
+
+            @if (esNuevo(m)) {
+              <div>
+                <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">Subcategoría</label>
+                <select [(ngModel)]="m.subCategoriaId" class="border border-gray-200 rounded-lg px-2 py-1.5 text-xs bg-white max-w-[200px]">
+                  <option [ngValue]="null">Sin subcategoría</option>
+                  @for (s of subcategorias; track s.subId) {
+                    <option [ngValue]="s.subId">{{ s.etiqueta }}</option>
+                  }
+                </select>
+              </div>
+            }
+            <div>
+              <label class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">
+                Precio de venta{{ esNuevo(m) ? '' : ' (talles nuevos)' }}
+              </label>
+              <input
+                type="number"
+                min="0"
+                [(ngModel)]="m.precioVenta"
+                class="w-32 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-right font-semibold focus:outline-none focus:ring-1 focus:ring-black"
+              />
+            </div>
+          </div>
+
+          <!-- Talles -->
+          <div class="overflow-x-auto mt-3 rounded-xl border border-gray-100">
+            <table class="w-full text-xs">
+              <thead class="bg-gray-50 text-gray-500">
+                <tr>
+                  <th class="text-left px-3 py-2 font-semibold">Talle</th>
+                  <th class="text-left px-3 py-2 font-semibold">SKU</th>
+                  <th class="text-right px-3 py-2 font-semibold">Cantidad</th>
+                  <th class="text-right px-3 py-2 font-semibold">Costo unitario</th>
+                  <th class="text-left px-3 py-2 font-semibold">Qué se hace</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of m.talles; track t.sku) {
+                  <tr class="border-t border-gray-100">
+                    <td class="px-3 py-1.5">
+                      @if (t.varianteId) {
+                        <span class="font-semibold">{{ t.talle }}</span>
+                      } @else {
+                        <input [(ngModel)]="t.talle" class="w-20 border border-gray-200 rounded-md px-2 py-1 text-xs font-semibold" />
+                      }
+                    </td>
+                    <td class="px-3 py-1.5 font-mono text-gray-500">{{ t.sku }}</td>
+                    <td class="px-3 py-1.5 text-right">{{ t.cantidad }}</td>
+                    <td class="px-3 py-1.5 text-right">{{ t.costoUnitario | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</td>
+                    <td class="px-3 py-1.5">
+                      @if (t.varianteId) {
+                        <span class="text-gray-600">Suma stock: {{ t.stockActual }} → {{ (t.stockActual ?? 0) + t.cantidad }}</span>
+                      } @else {
+                        <span class="text-black font-medium">Talle nuevo con {{ t.cantidad }} u.</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Confirmar -->
+      <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-3 mt-4">
+        <p class="text-xs text-gray-500">
+          Se van a crear {{ productosNuevos }} productos y {{ variantesNuevas }} talles, y a sumar {{ v.unidades }} unidades al stock.
+        </p>
+        <button
+          (click)="confirmar()"
+          [disabled]="!puedeConfirmar"
+          class="flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          @if (confirmando) {
+            <i class="pi pi-spin pi-spinner text-xs"></i>
+          } @else {
+            <i class="pi pi-check text-xs"></i>
+          }
+          Confirmar importación
+        </button>
+      </div>
+    }
+  }
+
+  <!-- Historial de facturas importadas -->
+  <div class="max-w-5xl mx-auto mt-8">
+    <h3 class="text-sm font-bold text-black mb-2">Facturas importadas</h3>
+    <div class="bg-white border border-gray-200 rounded-2xl overflow-x-auto">
+      @if (cargandoHistorial) {
+        <p class="p-5 text-xs text-gray-400"><i class="pi pi-spin pi-spinner mr-1"></i> Cargando…</p>
+      } @else if (historial.length === 0) {
+        <p class="p-5 text-xs text-gray-400">Todavía no se importó ninguna factura.</p>
+      } @else {
+        <table class="w-full text-xs">
+          <thead class="bg-gray-50 text-gray-500">
+            <tr>
+              <th class="text-left px-4 py-2.5 font-semibold">Proveedor</th>
+              <th class="text-left px-4 py-2.5 font-semibold">Factura N°</th>
+              <th class="text-left px-4 py-2.5 font-semibold">Fecha</th>
+              <th class="text-right px-4 py-2.5 font-semibold">Total</th>
+              <th class="text-right px-4 py-2.5 font-semibold">Unidades</th>
+              <th class="text-left px-4 py-2.5 font-semibold">Importada</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of historial; track f.id) {
+              <tr class="border-t border-gray-100">
+                <td class="px-4 py-2.5">
+                  <p class="font-semibold text-black">{{ f.proveedor }}</p>
+                  <p class="text-gray-400">CUIT {{ f.cuit }}</p>
+                </td>
+                <td class="px-4 py-2.5 font-mono">{{ f.numero }}</td>
+                <td class="px-4 py-2.5">{{ f.fecha | date: 'dd/MM/yyyy' }}</td>
+                <td class="px-4 py-2.5 text-right font-semibold">{{ f.total | currency: 'ARS' : 'symbol-narrow' : '1.2-2' }}</td>
+                <td class="px-4 py-2.5 text-right">{{ f.unidades }}</td>
+                <td class="px-4 py-2.5 text-gray-500">
+                  {{ f.importadaEn | date: 'dd/MM/yyyy HH:mm' }}{{ f.usuario ? ' · ' + f.usuario : '' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+</section>

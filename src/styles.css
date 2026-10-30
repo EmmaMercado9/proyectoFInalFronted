@@ -85,3 +85,8 @@ body {
     box-shadow: none;
   }
 }
+
+/* Reportes: los botones y filtros no se imprimen */
+@media print {
+  .no-print { display: none !important; }
+}

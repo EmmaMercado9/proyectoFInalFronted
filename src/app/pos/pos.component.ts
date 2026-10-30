@@ -23,10 +23,11 @@ import {
 } from 'rxjs';
 
 import { ProductService } from '../services/products.service';
-import { OrderService, OrderRequest } from '../services/order.service';
+import { OrderService, OrderRequest, PaymentMethod } from '../services/order.service';
 import { UserService } from '../services/user.service';
 import { ClientService, ClienteDTO } from '../services/client.service';
 import { FacturacionService } from '../services/facturacion.service';
+import { PagosService, PlanPago, ajustePorMedio } from '../services/pagos.service';
 import { ErrorHandleService } from '../error/error-handle.service';
 import { EscanerService } from '../shared/escaner/escaner.service';
 import { EscanerToggleComponent } from '../shared/escaner/escaner-toggle.component';
@@ -88,6 +89,10 @@ export class PosComponent implements OnInit, OnDestroy {
   descuento = 0;
   procesando = false;
 
+  // Planes de pago: descuento en efectivo y cuotas de la tarjeta de crédito
+  planes: PlanPago[] = [];
+  cuotas = 1;
+
   metodosPago: {
     value:
       | 'EFECTIVO'
@@ -120,6 +125,7 @@ export class PosComponent implements OnInit, OnDestroy {
   private facturacion = inject(FacturacionService);
   private errorService = inject(ErrorHandleService);
   private escaner = inject(EscanerService);
+  private pagos = inject(PagosService);
 
   // ─── Facturación al vender (opcional, se recuerda la elección) ──────────
   facturacionLista = false;
@@ -148,6 +154,8 @@ export class PosComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.pagos.planes().subscribe({ next: (p) => (this.planes = p), error: () => (this.planes = []) });
+
     this.facturacion.estado().subscribe({
       next: (e) => {
         this.facturacionLista = e.habilitada;
@@ -382,6 +390,7 @@ export class PosComponent implements OnInit, OnDestroy {
   limpiarCarrito(): void {
     this.items = [];
     this.descuento = 0;
+    this.cuotas = 1;
     setTimeout(() => this.buscarInput?.nativeElement?.focus(), 100);
   }
 
@@ -391,8 +400,45 @@ export class PosComponent implements OnInit, OnDestroy {
     return this.items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
   }
 
-  get totalFinal(): number {
+  /** Subtotal menos el descuento manual: sobre esto se aplica el porcentaje del medio de pago */
+  get baseConDescuento(): number {
     return Math.max(0, this.subtotal - this.descuento);
+  }
+
+  planDe(medio: string, cuotas = 1): PlanPago | undefined {
+    return this.planes.find((p) => p.medio === medio && p.cuotas === cuotas && p.activo);
+  }
+
+  /** Cuotas habilitadas de la tarjeta de crédito (1, 3, 4, 6…) */
+  get planesCredito(): PlanPago[] {
+    return this.planes.filter((p) => p.medio === 'TARJETA_CREDITO' && p.activo);
+  }
+
+  get porcentajeMedio(): number {
+    return this.planDe(this.metodoPago, this.metodoPago === 'TARJETA_CREDITO' ? this.cuotas : 1)?.porcentaje ?? 0;
+  }
+
+  get ajusteMedio(): number {
+    return ajustePorMedio(this.baseConDescuento, this.porcentajeMedio);
+  }
+
+  get totalFinal(): number {
+    return this.baseConDescuento + this.ajusteMedio;
+  }
+
+  get valorCuota(): number {
+    return this.totalFinal / this.cuotas;
+  }
+
+  /** Etiqueta del botón: "−10 %" / "+15 %" */
+  badgeMedio(medio: string): string | null {
+    const pct = this.planDe(medio)?.porcentaje ?? 0;
+    return pct === 0 ? null : (pct > 0 ? '+' : '−') + Math.abs(pct) + ' %';
+  }
+
+  elegirMedio(medio: PaymentMethod): void {
+    this.metodoPago = medio;
+    this.cuotas = 1;
   }
 
   get cantidadItems(): number {
@@ -509,6 +555,7 @@ export class PosComponent implements OnInit, OnDestroy {
       userId: this.userService.getUserId() ?? undefined,
       clienteId: this.clienteSeleccionado?.idClient ?? undefined,
       payment: this.metodoPago,
+      cuotas: this.metodoPago === 'TARJETA_CREDITO' ? this.cuotas : undefined,
       discount: this.descuento > 0 ? this.descuento : undefined,
       items: this.items.map((i) => ({
         variantId: i.variantId,

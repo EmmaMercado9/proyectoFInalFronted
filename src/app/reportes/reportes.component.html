@@ -1,0 +1,315 @@
+<section class="min-h-screen bg-gray-50 pb-16 px-4 sm:px-6">
+  <!-- Cabecera y período -->
+  <div class="max-w-6xl mx-auto pt-6 mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-xl font-bold text-black">Estadísticas y reportes</h2>
+      <p class="text-xs text-gray-400 mt-0.5">
+        Facturación, ganancias, pérdidas y recomendaciones de compra a partir de tus ventas.
+      </p>
+    </div>
+    <button (click)="imprimir()" class="no-print flex items-center gap-2 px-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-semibold hover:bg-gray-50">
+      <i class="pi pi-print text-xs"></i> Imprimir
+    </button>
+  </div>
+
+  <div class="no-print max-w-6xl mx-auto bg-white border border-gray-200 rounded-2xl p-3 mb-4 flex flex-wrap items-center gap-2">
+    @for (p of periodos; track p.valor) {
+      <button
+        (click)="elegir(p.valor)"
+        class="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+        [class.bg-black]="periodo === p.valor"
+        [class.text-white]="periodo === p.valor"
+        [class.text-gray-600]="periodo !== p.valor"
+        [class.hover:bg-gray-100]="periodo !== p.valor"
+      >
+        {{ p.texto }}
+      </button>
+    }
+    @if (periodo === 'personalizado') {
+      <input type="date" [(ngModel)]="desde" class="border border-gray-200 rounded-lg px-2 py-1 text-xs" />
+      <span class="text-xs text-gray-400">a</span>
+      <input type="date" [(ngModel)]="hasta" class="border border-gray-200 rounded-lg px-2 py-1 text-xs" />
+      <button (click)="cargar()" class="px-3 py-1.5 bg-black text-white rounded-lg text-xs font-semibold">Ver</button>
+    }
+    @if (cargando) {
+      <i class="pi pi-spin pi-spinner text-gray-400 text-sm ml-auto"></i>
+    }
+  </div>
+
+  @if (r; as r) {
+    <p class="max-w-6xl mx-auto text-xs text-gray-500 mb-3">
+      Del {{ r.desde | date: 'dd/MM/yyyy' }} al {{ r.hasta | date: 'dd/MM/yyyy' }} · comparado con el período anterior del mismo largo
+    </p>
+
+    <!-- Lo más importante -->
+    @if (r.observaciones.length) {
+      <div class="max-w-6xl mx-auto bg-black text-white rounded-2xl p-5 mb-4">
+        <p class="text-xs uppercase tracking-wide text-gray-400 mb-2">Lo más importante</p>
+        <ul class="space-y-1.5">
+          @for (o of r.observaciones; track $index) {
+            <li class="text-sm flex gap-2"><i class="pi pi-angle-right text-xs mt-1 text-gray-400"></i>{{ o }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Tu tienda en números -->
+    <div class="max-w-6xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+      <h3 class="text-sm font-bold text-black mb-3">Tu tienda en números: visión general</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        @for (k of indicadores; track k.titulo) {
+          <div class="border border-gray-200 rounded-xl px-4 py-3">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-black flex items-center gap-1.5 whitespace-nowrap">
+                {{ k.titulo }}
+                <i class="pi pi-info-circle text-xs text-blue-600 cursor-help" [title]="k.ayuda"></i>
+              </p>
+              <p class="text-base font-bold text-black">{{ k.actual }}</p>
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 mt-2">
+              <span>Mismo período anterior</span><span>{{ k.anterior }}</span>
+            </div>
+            <div class="flex justify-between text-xs mt-1.5">
+              <span class="text-gray-500">Variación{{ k.titulo === 'Margen' ? ' (puntos)' : '' }}</span>
+              @if (k.variacion === null) {
+                <span class="text-gray-400">—</span>
+              } @else {
+                <span class="font-semibold" [class.text-green-600]="k.variacion > 0" [class.text-red-500]="k.variacion < 0" [class.text-gray-500]="k.variacion === 0">
+                  {{ k.variacion > 0 ? '+' : '' }}{{ k.variacion | number: '1.2-2' }}{{ k.titulo === 'Margen' ? '' : '%' }}
+                </span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Cómo se forma la ganancia -->
+    <div class="max-w-6xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+      <h3 class="text-sm font-bold text-black mb-3">Cómo se forma la ganancia</h3>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"
+        [ngClass]="r.actual.recargos > 0 ? 'lg:grid-cols-8' : 'lg:grid-cols-7'">
+        <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">Ventas brutas</p><p class="font-bold">{{ r.actual.ventasBrutas | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">− Descuentos</p><p class="font-bold text-red-500">{{ r.actual.descuentos | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        @if (r.actual.recargos > 0) {
+          <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">+ Recargos por cuotas</p><p class="font-bold text-green-600">{{ r.actual.recargos | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        }
+        <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">− Devoluciones</p><p class="font-bold text-red-500">{{ r.actual.devoluciones | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-gray-100 p-3"><p class="text-gray-500">= Ventas netas</p><p class="font-bold">{{ r.actual.ventasNetas | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">− Costo de lo vendido</p><p class="font-bold text-red-500">{{ r.actual.costoMercaderia | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">− Fallados devueltos</p><p class="font-bold text-red-500">{{ r.actual.perdidaFallados | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-black text-white p-3"><p class="text-gray-300">= Ganancia bruta</p><p class="font-bold">{{ r.actual.gananciaBruta | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+      </div>
+      <p class="text-[11px] text-gray-400 mt-2">
+        Ganancia bruta: no incluye gastos fijos (alquiler, sueldos, servicios) ni impuestos.
+      </p>
+    </div>
+
+    <!-- Ventas por día -->
+    <div class="max-w-6xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold text-black">Ventas por {{ agrupacion }}</h3>
+        <div class="flex gap-3 text-[11px] text-gray-500">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-gray-300"></span> Ventas netas</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-black"></span> Ganancia</span>
+        </div>
+      </div>
+      @if (hayVentas) {
+        <div class="flex items-end gap-px h-44 border-b border-gray-200">
+          @for (p of puntos; track p.fecha) {
+            <div class="flex-1 min-w-0 h-full flex items-end relative group" [title]="(p.fecha | date: agrupacion === 'mes' ? 'MM/yyyy' : 'dd/MM') + ': ' + (p.ventas | currency: 'ARS' : 'symbol-narrow' : '1.0-0') + ' · ganancia ' + (p.ganancia | currency: 'ARS' : 'symbol-narrow' : '1.0-0') + ' · ' + p.cantidad + ' ventas'">
+              <div class="w-full bg-gray-300 rounded-t-sm relative" [style.height.%]="alto(p)">
+                <div class="absolute bottom-0 left-0 right-0 bg-black rounded-t-sm" [style.height.%]="p.ventas > 0 ? (altoGanancia(p) / alto(p)) * 100 : 0"></div>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="flex gap-px mt-1">
+          @for (p of puntos; track p.fecha; let i = $index) {
+            <div class="flex-1 min-w-0 text-[9px] text-gray-400 text-center whitespace-nowrap">
+              {{ mostrarEtiqueta(i) ? (p.fecha | date: agrupacion === 'mes' ? 'MMM' : 'dd/MM') : '' }}
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="text-xs text-gray-400 py-8 text-center">No hubo ventas en este período.</p>
+      }
+    </div>
+
+    <!-- Desgloses -->
+    @if (hayVentas) {
+      <div class="max-w-6xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        @for (b of bloques(r); track b.titulo) {
+          <div class="bg-white border border-gray-200 rounded-2xl p-5">
+            <h3 class="text-sm font-bold text-black mb-3">{{ b.titulo }}</h3>
+            <div class="space-y-2">
+              @for (i of b.items; track i.nombre) {
+                <div>
+                  <div class="flex justify-between text-xs">
+                    <span class="text-gray-700 truncate">{{ i.nombre }}</span>
+                    <span class="font-semibold">{{ i.ventas | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</span>
+                  </div>
+                  <div class="h-1.5 bg-gray-100 rounded-full mt-1">
+                    <div class="h-1.5 bg-black rounded-full" [style.width.%]="ancho(i.ventas, max(b.items))"></div>
+                  </div>
+                  <p class="text-[10px] text-gray-400 mt-0.5">{{ i.cantidad }} {{ b.unidad }} · ganancia {{ i.ganancia | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Productos -->
+      <div class="max-w-6xl mx-auto grid lg:grid-cols-2 gap-4 mb-4">
+        @for (t of [{ titulo: 'Más vendidos (unidades)', lista: r.masVendidos }, { titulo: 'Más rentables (ganancia)', lista: r.masRentables }]; track t.titulo) {
+          <div class="bg-white border border-gray-200 rounded-2xl p-5 overflow-x-auto">
+            <h3 class="text-sm font-bold text-black mb-3">{{ t.titulo }}</h3>
+            <table class="w-full text-xs">
+              <thead class="text-gray-400">
+                <tr><th class="text-left pb-2 font-semibold">Producto</th><th class="text-right pb-2 font-semibold">Unid.</th><th class="text-right pb-2 font-semibold">Ventas</th><th class="text-right pb-2 font-semibold">Ganancia</th><th class="text-right pb-2 font-semibold">Margen</th></tr>
+              </thead>
+              <tbody>
+                @for (p of t.lista; track p.sku) {
+                  <tr class="border-t border-gray-100">
+                    <td class="py-1.5 pr-2">{{ p.producto }}</td>
+                    <td class="py-1.5 text-right">{{ p.unidades }}</td>
+                    <td class="py-1.5 text-right">{{ p.ventas | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</td>
+                    <td class="py-1.5 text-right font-semibold" [class.text-red-500]="p.ganancia < 0">{{ p.ganancia | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</td>
+                    <td class="py-1.5 text-right">{{ p.margen !== null ? p.margen + ' %' : '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Pérdidas -->
+    <div class="max-w-6xl mx-auto bg-white border border-gray-200 rounded-2xl p-5 mb-4">
+      <h3 class="text-sm font-bold text-black mb-3">Pérdidas y fugas de dinero</h3>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+        <div class="rounded-xl bg-red-50 p-3"><p class="text-red-400">Productos fallados</p><p class="font-bold text-red-600">{{ r.perdidas.perdidaFallados | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p><p class="text-[10px] text-red-400">{{ r.perdidas.unidadesFalladas }} unidades</p></div>
+        <div class="rounded-xl bg-red-50 p-3"><p class="text-red-400">Ventas bajo costo</p><p class="font-bold text-red-600">{{ r.perdidas.perdidaVentasBajoCosto | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-amber-50 p-3"><p class="text-amber-500">Descuentos otorgados</p><p class="font-bold text-amber-700">{{ r.perdidas.descuentos | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-amber-50 p-3"><p class="text-amber-500">Dinero devuelto</p><p class="font-bold text-amber-700">{{ r.perdidas.devoluciones | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+        <div class="rounded-xl bg-gray-50 p-3"><p class="text-gray-400">Ventas canceladas</p><p class="font-bold">{{ r.perdidas.canceladas }} · {{ r.perdidas.montoCancelado | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p></div>
+      </div>
+      @if (r.perdidas.vendidosBajoCosto.length) {
+        <p class="text-xs font-semibold mt-4 mb-1">Vendidos por debajo del costo</p>
+        @for (p of r.perdidas.vendidosBajoCosto; track p.sku) {
+          <p class="text-xs text-gray-600">{{ p.producto }}: {{ p.unidades }} unid., pérdida {{ -p.ganancia | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+        }
+      }
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="max-w-6xl mx-auto bg-white border-2 border-black rounded-2xl p-5 mb-4">
+      <h3 class="text-sm font-bold text-black">Recomendaciones de compra</h3>
+      <p class="text-[11px] text-gray-400 mb-3">
+        Según las ventas de los últimos 30 días: se recomienda reponer lo que alcanza para menos de 15 días o está bajo el mínimo,
+        comprando lo necesario para 30 días de ventas.
+      </p>
+      @if (r.recomendaciones.reponer.length) {
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs">
+            <thead class="text-gray-400">
+              <tr>
+                <th class="text-left pb-2 font-semibold">Producto</th><th class="text-left pb-2 font-semibold">Variante</th>
+                <th class="text-right pb-2 font-semibold">Stock</th><th class="text-right pb-2 font-semibold">Vendidas 30 d</th>
+                <th class="text-right pb-2 font-semibold">Alcanza para</th><th class="text-right pb-2 font-semibold">Comprar</th>
+                <th class="text-right pb-2 font-semibold">Costo est.</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (x of r.recomendaciones.reponer; track x.sku) {
+                <tr class="border-t border-gray-100">
+                  <td class="py-1.5 pr-2">
+                    @if (x.urgente) { <span class="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full mr-1">SIN STOCK</span> }
+                    {{ x.producto }}
+                  </td>
+                  <td class="py-1.5">{{ x.variante }}</td>
+                  <td class="py-1.5 text-right">{{ x.stock }}</td>
+                  <td class="py-1.5 text-right">{{ x.vendidas30 }}</td>
+                  <td class="py-1.5 text-right">{{ x.urgente ? '—' : x.diasCobertura + ' días' }}</td>
+                  <td class="py-1.5 text-right font-bold">{{ x.sugerido }}</td>
+                  <td class="py-1.5 text-right">{{ x.costoEstimado | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="text-xs font-semibold text-right mt-2">Inversión sugerida: {{ inversionSugerida | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+      } @else {
+        <p class="text-xs text-gray-500">No hay nada urgente para reponer según las ventas recientes.</p>
+      }
+
+      <div class="grid md:grid-cols-2 gap-4 mt-5">
+        <div>
+          <p class="text-xs font-semibold mb-1">Talles que más se venden (90 días)</p>
+          @for (t of r.recomendaciones.tallesMasVendidos; track $index) {
+            <p class="text-xs text-gray-600">{{ t.producto }} · talle <b>{{ t.talle }}</b>: {{ t.unidades }} unid.</p>
+          } @empty {
+            <p class="text-xs text-gray-400">Sin datos de talles.</p>
+          }
+        </div>
+        <div>
+          <p class="text-xs font-semibold mb-1">Sin ventas en 90 días: no comprar más, considerar promoción</p>
+          @for (s of r.recomendaciones.sinRotacion; track s.sku) {
+            <p class="text-xs text-gray-600">{{ s.producto }} ({{ s.variante }}): {{ s.stock }} unid. · {{ s.capitalInmovilizado | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+          } @empty {
+            <p class="text-xs text-gray-400">Toda la mercadería se movió en los últimos 90 días.</p>
+          }
+          @if (capitalInmovilizado > 0) {
+            <p class="text-xs font-semibold mt-1">Capital inmovilizado: {{ capitalInmovilizado | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+          }
+        </div>
+        <div>
+          <p class="text-xs font-semibold mb-1">Margen bajo (menos de 20 %): revisar precio o proveedor</p>
+          @for (p of r.recomendaciones.margenBajo; track p.sku) {
+            <p class="text-xs text-gray-600">{{ p.producto }}: margen {{ p.margen }} %</p>
+          } @empty {
+            <p class="text-xs text-gray-400">Ningún producto vendido con margen bajo.</p>
+          }
+        </div>
+        <div>
+          <p class="text-xs font-semibold mb-1">Se devuelven mucho (20 % o más): revisar calidad o talles</p>
+          @for (a of r.recomendaciones.altaDevolucion; track a.producto) {
+            <p class="text-xs text-gray-600">{{ a.producto }}: {{ a.devueltas }} de {{ a.vendidas }} ({{ a.tasa }} %)</p>
+          } @empty {
+            <p class="text-xs text-gray-400">Ningún producto con muchas devoluciones.</p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Inventario, compras y facturación -->
+    <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-4">
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <h3 class="text-sm font-bold text-black mb-2">Inventario actual</h3>
+        <p class="text-xs text-gray-600">{{ r.inventario.unidades }} unidades en stock</p>
+        <p class="text-xs text-gray-600">Valor al costo: <b>{{ r.inventario.valorAlCosto | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</b></p>
+        <p class="text-xs text-gray-600">Valor a precio de venta: <b>{{ r.inventario.valorAlPrecio | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</b></p>
+        <p class="text-xs text-gray-600">{{ r.inventario.variantesSinStock }} variantes sin stock · {{ r.inventario.variantesBajoMinimo }} bajo el mínimo</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <h3 class="text-sm font-bold text-black mb-2">Compras del período</h3>
+        <p class="text-xs text-gray-600">{{ r.compras.facturas }} facturas de proveedores importadas</p>
+        <p class="text-xs text-gray-600">{{ r.compras.unidades }} unidades · <b>{{ r.compras.total | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</b></p>
+        <p class="text-[11px] text-gray-400 mt-1">Solo cuenta las facturas cargadas con "Importar factura".</p>
+      </div>
+      <div class="bg-white border border-gray-200 rounded-2xl p-5">
+        <h3 class="text-sm font-bold text-black mb-2">
+          Facturación electrónica
+          @if (r.facturacion.ambiente === 'HOMOLOGACION') { <span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full ml-1">Prueba</span> }
+        </h3>
+        <p class="text-xs text-gray-600">{{ r.facturacion.comprobantes }} comprobantes</p>
+        <p class="text-xs text-gray-600">Facturado: <b>{{ r.facturacion.facturado | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</b> · notas de crédito {{ r.facturacion.notasCredito | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+        <p class="text-xs text-gray-600">Neto: <b>{{ r.facturacion.neto | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</b>{{ r.facturacion.porcentajeDeVentas !== null ? ' · ' + r.facturacion.porcentajeDeVentas + ' % de las ventas' : '' }}</p>
+      </div>
+    </div>
+  } @else if (!cargando) {
+    <p class="max-w-6xl mx-auto text-xs text-gray-400">Elegí un período para ver el reporte.</p>
+  }
+</section>

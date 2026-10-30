@@ -190,10 +190,19 @@
             <span>− ${{ orden.discount | number: '1.0-0' }}</span>
           </div>
           <div
+            *ngIf="orden.ajusteMedioPago"
+            class="flex justify-between text-sm"
+            [class.text-green-600]="orden.ajusteMedioPago < 0"
+            [class.text-amber-600]="orden.ajusteMedioPago > 0"
+          >
+            <span>{{ ajusteMedioLabel(orden) }}</span>
+            <span>{{ orden.ajusteMedioPago < 0 ? '−' : '+' }} ${{ (orden.ajusteMedioPago < 0 ? -orden.ajusteMedioPago : orden.ajusteMedioPago) | number: '1.0-2' }}</span>
+          </div>
+          <div
             class="flex justify-between text-base font-bold text-black pt-2 border-t border-gray-100"
           >
             <span>Total</span>
-            <span>${{ orden.totalAmount | number: '1.0-0' }}</span>
+            <span>${{ orden.totalAmount | number: '1.0-2' }}</span>
           </div>
         </div>
       </div>
@@ -220,7 +229,7 @@
           <div class="flex justify-between text-sm">
             <span class="text-gray-400">Método de pago</span>
             <span class="font-medium text-black">
-              {{ getPaymentLabel(orden.payment) }}
+              {{ pagoConCuotas(orden) }}
             </span>
           </div>
 

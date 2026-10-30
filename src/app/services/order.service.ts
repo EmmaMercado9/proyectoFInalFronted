@@ -24,6 +24,7 @@ export interface OrderRequest {
   userId?: string;
   clienteId?: string;
   payment: PaymentMethod;
+  cuotas?: number; // solo tarjeta de crédito
   discount?: number;
   address?: string;
   description?: string;
@@ -75,6 +76,9 @@ export interface OrderResponse {
   orderDate: string;
   subtotal: number;
   discount: number;
+  cuotas?: number;
+  ajustePorcentaje?: number; // negativo = descuento, positivo = recargo
+  ajusteMedioPago?: number;
   totalAmount: number;
   address?: string;
   description?: string;

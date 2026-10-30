@@ -57,6 +57,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'configuracion/medios-de-pago',
+        canActivate: [adminGuard],
+        title: 'Medios de pago',
+        loadComponent: () =>
+          import('./config-medios-pago/config-medios-pago.component').then(
+            (m) => m.ConfigMediosPagoComponent
+          ),
+      },
+      {
         path: 'configuracion/facturacion',
         canActivate: [adminGuard],
         title: 'Facturación',
@@ -105,6 +114,22 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./comprobante/comprobante.component').then(
             (m) => m.ComprobanteComponent
+          ),
+      },
+      {
+        path: 'reportes',
+        canActivate: [adminGuard],
+        title: 'Reportes',
+        loadComponent: () =>
+          import('./reportes/reportes.component').then((m) => m.ReportesComponent),
+      },
+      {
+        path: 'productos/importar-factura',
+        canActivate: [adminGuard],
+        title: 'Importar factura',
+        loadComponent: () =>
+          import('./importar-factura/importar-factura.component').then(
+            (m) => m.ImportarFacturaComponent
           ),
       },
       {

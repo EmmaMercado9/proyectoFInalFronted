@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 import { OrderDetailResponse, OrderResponse } from '../../services/order.service';
 import { Factura, docTipoLabel } from '../../services/facturacion.service';
 import { AnchoTicket } from './ticket-impresion';
-import { paymentLabel, statusLabel } from '../../utils/order-labels';
+import { ajusteMedioLabel, pagoConCuotas, paymentLabel, statusLabel } from '../../utils/order-labels';
 
 interface Linea {
   descripcion: string;
@@ -38,6 +38,8 @@ export class TicketComponent implements OnChanges {
 
   readonly docTipoLabel = docTipoLabel;
   readonly paymentLabel = paymentLabel;
+  readonly pagoConCuotas = pagoConCuotas;
+  readonly ajusteMedioLabel = ajusteMedioLabel;
   readonly statusLabel = statusLabel;
   qr = '';
 

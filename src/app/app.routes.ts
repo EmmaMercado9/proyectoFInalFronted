@@ -5,12 +5,8 @@ import { guardRedictLoginGuard } from './utils/guard-redict-login.guard';
 // Todas las pantallas se cargan de forma diferida (lazy) para que el bundle
 // inicial no incluya el panel de administración completo.
 export const routes: Routes = [
-  {
-    path: '',
-    pathMatch: 'full',
-    loadComponent: () =>
-      import('./main/main.component').then((m) => m.MainComponent),
-  },
+  // La entrada al sistema es el inicio de sesión; con sesión activa el guard lleva al panel
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
 
   // El COLABORADOR ahora trabaja dentro del panel (POS, ventas, clientes)
   { path: 'user', redirectTo: 'admin/pos', pathMatch: 'full' },

@@ -96,6 +96,12 @@ export class ProductService {
     params: {
       nombre?: string;
       status?: string;
+      marca?: string;
+      categoriaId?: number | null;
+      talle?: string;
+      color?: string;
+      stock?: string;
+      conVariantes?: boolean;
       page?: number;
       size?: number;
     } = {}
@@ -103,11 +109,27 @@ export class ProductService {
     const q = new URLSearchParams();
     if (params.nombre) q.set('nombre', params.nombre);
     if (params.status) q.set('status', params.status);
+    if (params.marca) q.set('marca', params.marca);
+    if (params.categoriaId) q.set('categoriaId', String(params.categoriaId));
+    if (params.talle) q.set('talle', params.talle);
+    if (params.color) q.set('color', params.color);
+    if (params.stock) q.set('stock', params.stock);
+    if (params.conVariantes !== undefined) q.set('conVariantes', String(params.conVariantes));
     q.set('page', String(params.page ?? 0));
     q.set('size', String(params.size ?? 12));
     return this.http.get<Page<ProductListadoDTO>>(
       `${this.API}/productos?${q.toString()}`
     );
+  }
+
+  /** Marcas, talles y colores existentes, para los filtros del inventario */
+  opcionesFiltro(): Observable<{ marcas: string[]; talles: string[]; colores: string[] }> {
+    return this.http.get<{ marcas: string[]; talles: string[]; colores: string[] }>(`${this.API}/productos/filtros`);
+  }
+
+  /** El servidor descarga la imagen del link (solo ADMIN) */
+  imagenDesdeUrl(url: string): Observable<{ tipo: string; base64: string }> {
+    return this.http.post<{ tipo: string; base64: string }>(`${this.API}/productos/imagen-desde-url`, { url });
   }
 
   // Atributos para el selector de variantes

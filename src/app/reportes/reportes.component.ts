@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { finalize } from 'rxjs';
 
-import { Item, Punto, Reporte, ReportesService } from '../services/reportes.service';
+import { Item, Punto, Reporte, Reposicion, ReportesService } from '../services/reportes.service';
 import { ErrorHandleService } from '../error/error-handle.service';
 
 type Periodo = 'hoy' | '7' | '30' | 'mes' | 'mesAnterior' | 'anio' | 'personalizado';
@@ -35,6 +35,7 @@ export class ReportesComponent implements OnInit {
   hasta = '';
   cargando = false;
   r: Reporte | null = null;
+  verDetalle = false;
 
   ngOnInit(): void {
     this.elegir('30');
@@ -81,8 +82,63 @@ export class ReportesComponent implements OnInit {
       });
   }
 
+  /** El papel lleva el reporte completo */
   imprimir(): void {
-    window.print();
+    this.verDetalle = true;
+    setTimeout(() => window.print());
+  }
+
+  // ─── Resumen ────────────────────────────────────────────────────────────
+
+  private readonly pesosEnteros = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+
+  get principales(): { titulo: string; valor: string; variacion: number | null; nota: string }[] {
+    if (!this.r) return [];
+    const a = this.r.actual;
+    const b = this.r.anterior;
+    return [
+      { titulo: 'Vendiste', valor: this.pesosEnteros.format(a.ventasNetas), variacion: this.variacion(a.ventasNetas, b.ventasNetas), nota: '' },
+      { titulo: 'Ganaste', valor: this.pesosEnteros.format(a.gananciaBruta), variacion: this.variacion(a.gananciaBruta, b.gananciaBruta), nota: '' },
+      { titulo: 'Ventas', valor: this.numero.format(a.cantidadVentas), variacion: null,
+        nota: `${this.numero.format(a.unidades)} unidades · ticket ${this.pesosEnteros.format(a.ticketPromedio)}` },
+    ];
+  }
+
+  /** Lo accionable, en una línea cada cosa */
+  get acciones(): string[] {
+    if (!this.r) return [];
+    const { recomendaciones: rec, perdidas } = this.r;
+    const lista: string[] = [];
+    const urgentes = rec.reponer.filter((x) => x.urgente).length;
+    if (rec.reponer.length) {
+      lista.push(`Reponé ${rec.reponer.length} talles${urgentes ? ` (${urgentes} ya sin stock)` : ''}: ${this.pesosEnteros.format(this.inversionSugerida)} aprox.`);
+    }
+    if (this.capitalInmovilizado > 0) {
+      lista.push(`Tenés ${this.pesosEnteros.format(this.capitalInmovilizado)} en mercadería que no se vende hace 90 días: hacé una promo.`);
+    }
+    const perdido = perdidas.perdidaFallados + perdidas.perdidaVentasBajoCosto;
+    if (perdido > 0) {
+      lista.push(`Perdiste ${this.pesosEnteros.format(perdido)} entre fallados y ventas por debajo del costo.`);
+    }
+    return lista;
+  }
+
+  get paraComprar(): Reposicion[] {
+    return [...(this.r?.recomendaciones.reponer ?? [])]
+      .sort((a, b) => Number(b.urgente) - Number(a.urgente) || a.diasCobertura - b.diasCobertura)
+      .slice(0, 5);
+  }
+
+  private mejor(items: Item[] | undefined): string | null {
+    return items?.length ? items.reduce((a, b) => (b.ventas > a.ventas ? b : a)).nombre : null;
+  }
+
+  get mejorDia(): string | null {
+    return this.mejor(this.r?.porDiaDeSemana)?.toLowerCase() ?? null;
+  }
+
+  get mejorMedio(): string | null {
+    return this.mejor(this.r?.porMedioDePago) ?? null;
   }
 
   // ─── "Tu tienda en números" ─────────────────────────────────────────────

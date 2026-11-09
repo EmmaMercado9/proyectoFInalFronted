@@ -1,0 +1,72 @@
+<section class="min-h-screen bg-gray-50 pb-16 px-4">
+  <div class="max-w-xl mx-auto pt-5">
+    <h2 class="text-xl font-bold text-black">Consultar producto</h2>
+    <p class="text-xs text-gray-400 mt-0.5">Escaneá el código de barras o buscá por nombre o SKU.</p>
+
+    @if (camaraActiva) {
+      <div class="relative mt-4 rounded-2xl overflow-hidden bg-black">
+        <video #video class="w-full aspect-[4/3] object-cover" muted playsinline></video>
+        <div class="absolute inset-x-8 top-1/2 h-0.5 bg-red-500"></div>
+      </div>
+      <button (click)="detenerCamara()" class="mt-2 w-full py-3 border border-gray-200 bg-white text-sm font-semibold rounded-xl">
+        Cancelar
+      </button>
+    } @else {
+      <button (click)="iniciarCamara()" class="mt-4 w-full py-4 bg-black text-white text-sm font-bold rounded-2xl flex items-center justify-center gap-2">
+        <i class="pi pi-camera"></i> Escanear con la cámara
+      </button>
+    }
+    @if (errorCamara) {
+      <p class="mt-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">{{ errorCamara }}</p>
+    }
+
+    <form (ngSubmit)="buscar()" class="flex gap-2 mt-3">
+      <input
+        [(ngModel)]="texto"
+        name="texto"
+        enterkeyhint="search"
+        placeholder="Nombre o SKU"
+        class="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-3 text-base bg-white focus:outline-none focus:ring-1 focus:ring-black"
+      />
+      <button type="submit" class="px-4 border border-gray-200 bg-white rounded-xl" aria-label="Buscar">
+        <i class="pi pi-search"></i>
+      </button>
+    </form>
+
+    @if (buscando) {
+      <p class="mt-4 text-xs text-gray-400"><i class="pi pi-spin pi-spinner mr-1"></i> Buscando…</p>
+    }
+    @if (sinResultados) {
+      <p class="mt-4 text-sm text-gray-500 text-center">No se encontró ningún producto con "{{ texto }}".</p>
+    }
+
+    @for (r of resultados; track r.idProduct) {
+      <button (click)="abrir(r)" class="mt-2 w-full text-left bg-white border border-gray-200 rounded-xl px-4 py-3">
+        <span class="block text-sm font-semibold text-black">{{ r.nameProduct }}</span>
+        <span class="block text-xs text-gray-400 font-mono">{{ r.sku }}</span>
+      </button>
+    }
+
+    @if (producto; as p) {
+      <div class="mt-4 bg-white border border-gray-200 rounded-2xl p-4">
+        <p class="text-base font-bold text-black">{{ p.nameProduct }}</p>
+        <p class="text-xs text-gray-400">{{ p.marca || 'Sin marca' }} · <span class="font-mono">{{ p.sku }}</span></p>
+        <p class="mt-2 text-sm text-gray-600">Stock total: <b class="text-black">{{ stockTotal }}</b></p>
+
+        <div class="mt-3 divide-y divide-gray-100">
+          @for (v of variantes; track v.variantId) {
+            <div class="flex items-center justify-between gap-3 py-2.5" [class.bg-amber-50]="v.variantId === variantEscaneada">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-black">{{ v.esDefault ? 'Sin talle' : v.descripcion || v.sku }}</p>
+                <p class="text-xs text-gray-500">{{ v.precioVenta | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+              </div>
+              <span class="text-sm font-bold flex-shrink-0" [class.text-red-500]="v.stock <= 0" [class.text-black]="v.stock > 0">
+                {{ v.stock }} u.
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>

@@ -1,10 +1,10 @@
 <!-- pos.component.html — Punto de Venta CLOUFIT -->
-<div class="flex h-[calc(100vh-40px)] overflow-hidden bg-gray-50">
+<div class="flex flex-col md:flex-row md:h-[calc(100vh-40px)] md:overflow-hidden bg-gray-50">
   <!-- ══════════════════════════════════════════════════════════════════════
        PANEL IZQUIERDO — Buscador + Resultados
   ══════════════════════════════════════════════════════════════════════════ -->
   <div
-    class="flex-1 flex flex-col overflow-hidden border-r border-gray-200 bg-white"
+    class="md:flex-1 min-w-0 flex flex-col md:overflow-hidden border-b md:border-b-0 md:border-r border-gray-200 bg-white"
   >
     <!-- Cabecera -->
     <div class="px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
@@ -163,7 +163,7 @@
        PANEL DERECHO — Cliente + Carrito + Checkout
   ══════════════════════════════════════════════════════════════════════════ -->
   <div
-    class="w-80 lg:w-96 flex flex-col bg-white flex-shrink-0 overflow-hidden"
+    class="w-full md:w-80 lg:w-96 flex flex-col bg-white flex-shrink-0 md:overflow-y-auto"
   >
     <!-- ── Cabecera carrito ─────────────────────────────────────────────── -->
     <div class="px-5 py-4 border-b border-gray-100 flex-shrink-0">
@@ -190,7 +190,7 @@
     </div>
 
     <!-- ── Items carrito ────────────────────────────────────────────────── -->
-    <div class="flex-1 overflow-y-auto px-4 py-3">
+    <div class="flex-auto px-4 py-3">
       <!-- Vacío -->
       <div
         *ngIf="items.length === 0"
@@ -345,7 +345,7 @@
           <!-- Dropdown resultados cliente -->
           <div
             *ngIf="mostrarClienteResultados"
-            class="absolute bottom-10 left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-2xl z-30 overflow-hidden"
+            class="absolute top-full mt-1 left-0 right-0 bg-white border border-gray-200 rounded-2xl shadow-2xl z-30 overflow-hidden"
           >
             <div
               *ngIf="clienteBuscando"
@@ -423,153 +423,13 @@
       </div>
 
       <!-- ── Checkout ───────────────────────────────────────────────────── -->
-      <div *ngIf="items.length > 0" class="px-4 py-4 space-y-3">
-        <!-- Método de pago -->
-        <div>
-          <p
-            class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2"
-          >
-            Método de pago
-          </p>
-          <div class="grid grid-cols-5 gap-1">
-            <button
-              *ngFor="let mp of metodosPago"
-              (click)="elegirMedio(mp.value)"
-              class="relative flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-[10px] font-semibold transition border"
-              [class.bg-black]="metodoPago === mp.value"
-              [class.text-white]="metodoPago === mp.value"
-              [class.border-black]="metodoPago === mp.value"
-              [class.bg-white]="metodoPago !== mp.value"
-              [class.text-gray-600]="metodoPago !== mp.value"
-              [class.border-gray-200]="metodoPago !== mp.value"
-            >
-              <i class="pi {{ mp.icon }} text-xs"></i>
-              {{ mp.label }}
-              <span
-                *ngIf="badgeMedio(mp.value) as badge"
-                class="absolute -top-2 -right-1 px-1 rounded-full text-[9px] font-bold text-white"
-                [class.bg-green-500]="badge.startsWith('−')"
-                [class.bg-amber-500]="badge.startsWith('+')"
-              >{{ badge }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Cuotas (solo tarjeta de crédito) -->
-        <div *ngIf="metodoPago === 'TARJETA_CREDITO' && planesCredito.length > 0">
-          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Cuotas</p>
-          <div class="grid grid-cols-4 gap-1">
-            <button
-              *ngFor="let p of planesCredito"
-              (click)="cuotas = p.cuotas"
-              class="py-2 rounded-xl text-xs font-semibold border transition leading-tight"
-              [class.bg-black]="cuotas === p.cuotas"
-              [class.text-white]="cuotas === p.cuotas"
-              [class.border-black]="cuotas === p.cuotas"
-              [class.bg-white]="cuotas !== p.cuotas"
-              [class.text-gray-600]="cuotas !== p.cuotas"
-              [class.border-gray-200]="cuotas !== p.cuotas"
-            >
-              {{ p.cuotas === 1 ? '1 pago' : p.cuotas + ' cuotas' }}
-              <span class="block text-[9px] font-normal opacity-70">
-                {{ p.porcentaje === 0 ? 'sin interés' : '+' + p.porcentaje + ' %' }}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Descuento -->
-        <div class="flex items-center gap-3">
-          <label
-            class="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex-shrink-0"
-          >
-            Descuento $
-          </label>
-          <input
-            type="number"
-            min="0"
-            [(ngModel)]="descuento"
-            placeholder="0"
-            class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-black transition text-right font-semibold"
-          />
-        </div>
-
-        <!-- Totales -->
-        <div class="space-y-1">
-          <div class="flex justify-between text-xs text-gray-500">
-            <span>
-              Subtotal ({{ cantidadItems }} item{{
-                cantidadItems !== 1 ? 's' : ''
-              }})
-            </span>
-            <span>${{ subtotal | number: '1.0-0' }}</span>
-          </div>
-          <div
-            *ngIf="descuento > 0"
-            class="flex justify-between text-xs text-green-600"
-          >
-            <span>Descuento</span>
-            <span>− ${{ descuento | number: '1.0-0' }}</span>
-          </div>
-          <div
-            *ngIf="ajusteMedio !== 0"
-            class="flex justify-between text-xs"
-            [class.text-green-600]="ajusteMedio < 0"
-            [class.text-amber-600]="ajusteMedio > 0"
-          >
-            <span>
-              {{ ajusteMedio < 0 ? 'Descuento' : 'Recargo' }}
-              {{ metodoPago === 'TARJETA_CREDITO' && cuotas > 1 ? cuotas + ' cuotas' : '' }}
-              ({{ porcentajeMedio > 0 ? '+' : '' }}{{ porcentajeMedio }} %)
-            </span>
-            <span>{{ ajusteMedio < 0 ? '−' : '+' }} ${{ (ajusteMedio < 0 ? -ajusteMedio : ajusteMedio) | number: '1.0-2' }}</span>
-          </div>
-          <div
-            class="flex justify-between items-center pt-2 border-t border-gray-100"
-          >
-            <span class="text-sm font-bold text-black">Total</span>
-            <span class="text-xl font-bold text-black">
-              ${{ totalFinal | number: '1.0-2' }}
-            </span>
-          </div>
-          <p *ngIf="metodoPago === 'TARJETA_CREDITO' && cuotas > 1" class="text-right text-xs text-gray-500">
-            {{ cuotas }} cuotas de ${{ valorCuota | number: '1.2-2' }}
-          </p>
-        </div>
-
-        <!-- Facturar al vender (solo si la facturación está lista) -->
-        <label
-          *ngIf="facturacionLista"
-          class="flex items-center justify-between gap-2 mb-3 px-3 py-2.5 border border-gray-200 rounded-xl cursor-pointer select-none"
-        >
-          <span class="flex items-center gap-2 text-sm font-semibold text-black">
-            <input
-              type="checkbox"
-              [ngModel]="facturarAlVender"
-              (ngModelChange)="cambiarFacturar($event)"
-              class="accent-black w-4 h-4"
-            />
-            Emitir factura (Factura C)
-          </span>
-          <span *ngIf="esPrueba" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
-            Prueba
-          </span>
-        </label>
-
-        <!-- Botón confirmar -->
-        <button
-          (click)="confirmarVenta()"
-          [disabled]="procesando"
-          class="w-full py-3.5 bg-black hover:bg-gray-800 text-white text-sm font-bold rounded-2xl transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <i *ngIf="procesando" class="pi pi-spin pi-spinner text-sm"></i>
-          <i *ngIf="!procesando" class="pi pi-check-circle text-sm"></i>
-          {{
-            procesando
-              ? 'Procesando...'
-              : 'Confirmar · $' + (totalFinal | number: '1.0-2')
-          }}
-        </button>
+      <div *ngIf="items.length > 0" class="px-4 py-4">
+        <app-checkout-pago
+          [subtotal]="subtotal"
+          [cantidadItems]="cantidadItems"
+          [procesando]="procesando"
+          (confirmar)="confirmarVenta($event)"
+        />
       </div>
 
       <!-- Sin items — placeholder checkout -->

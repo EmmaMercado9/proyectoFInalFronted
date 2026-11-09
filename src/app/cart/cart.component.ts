@@ -16,7 +16,9 @@ import {
 } from 'rxjs';
 
 import { CartService, CartItem } from '../services/cart.service';
-import { OrderService, OrderRequest } from '../services/order.service';
+import { OrderRequest } from '../services/order.service';
+import { CheckoutPagoComponent, DatosPago } from '../shared/checkout/checkout-pago.component';
+import { VentaService } from '../shared/checkout/venta.service';
 import { UserService } from '../services/user.service';
 import { ClienteDTO, ClientService } from '../services/client.service';
 
@@ -24,30 +26,12 @@ import { ClienteDTO, ClientService } from '../services/client.service';
   selector: 'app-cart',
   standalone: true,
   templateUrl: './cart.component.html',
-  imports: [CommonModule, RouterModule, FormsModule, ToastModule],
+  imports: [CommonModule, RouterModule, FormsModule, ToastModule, CheckoutPagoComponent],
+  providers: [VentaService],
 })
 export class CartComponent implements OnInit {
   items: CartItem[] = [];
   isLoading = false;
-
-  // ─── Método de pago ──────────────────────────────────────────────────────
-  metodoPago:
-    | 'EFECTIVO'
-    | 'TARJETA_DEBITO'
-    | 'TARJETA_CREDITO'
-    | 'TRANSFERENCIA'
-    | 'MERCADOPAGO' = 'EFECTIVO';
-
-  metodosPago = [
-    { value: 'EFECTIVO', label: 'Efectivo', icon: 'pi-wallet' },
-    { value: 'TARJETA_DEBITO', label: 'Débito', icon: 'pi-credit-card' },
-    { value: 'TARJETA_CREDITO', label: 'Crédito', icon: 'pi-credit-card' },
-    { value: 'TRANSFERENCIA', label: 'Transferencia', icon: 'pi-send' },
-    { value: 'MERCADOPAGO', label: 'Mercado Pago', icon: 'pi-mobile' },
-  ];
-
-  // ─── Descuento ───────────────────────────────────────────────────────────
-  descuento = 0;
 
   // ─── Cliente ─────────────────────────────────────────────────────────────
   clienteSeleccionado: ClienteDTO | null = null;
@@ -64,7 +48,7 @@ export class CartComponent implements OnInit {
 
   // ─── Inyecciones ─────────────────────────────────────────────────────────
   private cartService = inject(CartService);
-  private orderService = inject(OrderService);
+  private ventas = inject(VentaService);
   private userService = inject(UserService);
   private clientService = inject(ClientService);
   private router = inject(Router);
@@ -106,9 +90,6 @@ export class CartComponent implements OnInit {
   }
   get estaVacio(): boolean {
     return this.items.length === 0;
-  }
-  get totalFinal(): number {
-    return Math.max(0, this.subtotal - this.descuento);
   }
 
   // ─── Items ───────────────────────────────────────────────────────────────
@@ -193,7 +174,7 @@ export class CartComponent implements OnInit {
   }
 
   // ─── Confirmar compra ────────────────────────────────────────────────────
-  confirmarCompra(): void {
+  confirmarCompra(pago: DatosPago): void {
     if (this.estaVacio) return;
     this.isLoading = true;
 
@@ -202,36 +183,20 @@ export class CartComponent implements OnInit {
     const dto: OrderRequest = {
       userId: this.userService.getUserId() ?? undefined,
       clienteId: this.clienteSeleccionado?.idClient ?? undefined,
-      payment: this.metodoPago,
-      discount: this.descuento > 0 ? this.descuento : undefined,
+      payment: pago.payment,
+      cuotas: pago.cuotas,
+      discount: pago.discount,
       items: this.items.map((i) => ({
         variantId: i.variantId,
         quantity: i.cantidad,
       })),
     };
 
-    const request$ = this.orderService.crearOrdenAdmin(dto);
-
-    request$
-      .pipe(
-        catchError((err) => {
-          this.isLoading = false;
-          const msg =
-            apiErrorMessage(err, 'Error al procesar la compra');
-          this.message.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: msg,
-            life: 5000,
-          });
-          return of(null);
-        })
-      )
-      .subscribe((orden) => {
-        if (!orden) return;
-        this.isLoading = false;
-        this.cartService.limpiar();
-        this.router.navigate(['admin/comprobante', orden.trackingId]);
-      });
+    this.ventas.registrar(
+      dto,
+      pago.facturar,
+      () => this.cartService.limpiar(),
+      () => (this.isLoading = false)
+    );
   }
 }

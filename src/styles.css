@@ -90,3 +90,10 @@ body {
 @media print {
   .no-print { display: none !important; }
 }
+
+/* Avisos: en el celular no pueden ser más anchos que la pantalla */
+@media (max-width: 480px) {
+  .p-toast {
+    width: calc(100vw - 16px) !important;
+  }
+}

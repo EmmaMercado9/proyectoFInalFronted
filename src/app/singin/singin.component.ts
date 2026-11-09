@@ -7,11 +7,13 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { EMPTY, catchError, finalize, switchMap, tap } from 'rxjs';
+import { EMPTY, catchError, switchMap, tap } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { UserService } from '../services/user.service';
 import { ErrorHandleService } from '../error/error-handle.service';
+
+const DURACION_MINIMA_MS = 900;
 
 @Component({
   selector: 'app-singin',
@@ -33,6 +35,7 @@ export class SinginComponent {
 
   showPassword = false;
   loading = false;
+  entrando = false; // login correcto: animación hasta que abre el panel
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -53,18 +56,25 @@ export class SinginComponent {
         tap(({ token }) => this.serviceUser.loginUser(token)),
         switchMap(() => this.serviceUser.getUserCurrent()),
         catchError((error) => {
+          this.loading = false;
           this.serviceUser.logout();
           this.mensaje.add(this.loginError(error));
           return EMPTY;
-        }),
-        finalize(() => (this.loading = false))
+        })
       )
       .subscribe((user) => {
         this.serviceUser.setUser(user);
         const home = this.serviceUser.homeRoute();
         if (home) {
-          this.router.navigate([home]);
+          this.entrando = true;
+          setTimeout(() => {
+            this.router.navigate([home]).finally(() => {
+              this.entrando = false;
+              this.loading = false;
+            });
+          }, DURACION_MINIMA_MS);
         } else {
+          this.loading = false;
           this.serviceUser.logout();
           this.mensaje.add({
             severity: 'warn',

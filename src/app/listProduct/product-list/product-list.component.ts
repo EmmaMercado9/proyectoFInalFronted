@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { EMPTY, catchError, of, debounceTime, Subject, Subscription } from 'rxjs';
+import { EMPTY, catchError, forkJoin, map, of, debounceTime, Subject, Subscription } from 'rxjs';
 import {
   CategoryResponse,
   ProductListadoDTO,
@@ -49,7 +49,12 @@ export class ProductListComponent implements OnInit, OnDestroy {
   // ─── Filtros ─────────────────────────────────────────────────────────────
   busqueda = '';
   statusFiltro = 'ACTIVO';
-  catFiltro = '';
+  catFiltro: number | null = null;
+  marcaFiltro = '';
+  talleFiltro = '';
+  colorFiltro = '';
+  stockFiltro = '';
+  opciones: { marcas: string[]; talles: string[]; colores: string[] } = { marcas: [], talles: [], colores: [] };
   page = 0;
   size = 12;
 
@@ -66,6 +71,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   escaneado: Escaneado | null = null;
   private escaner = inject(EscanerService);
   private subs: Subscription[] = [];
+  private metricasSub?: Subscription;
 
   // ─── Inyecciones ─────────────────────────────────────────────────────────
   private productService = inject(ProductService);
@@ -82,6 +88,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.cargarCategorias();
+    this.productService.opcionesFiltro().pipe(catchError(() => EMPTY)).subscribe((o) => (this.opciones = o));
     this.cargarProductos();
 
     // Debounce en búsqueda — espera 400ms antes de buscar
@@ -98,6 +105,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.forEach((s) => s.unsubscribe());
+    this.metricasSub?.unsubscribe();
   }
 
   // ─── Lector de códigos ───────────────────────────────────────────────────
@@ -161,8 +169,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.productService
       .listar({
-        nombre: this.busqueda || undefined,
-        status: this.statusFiltro || undefined,
+        ...this.filtrosActuales,
+        stock: this.stockFiltro || undefined,
         page: this.page,
         size: this.size,
       })
@@ -189,15 +197,35 @@ export class ProductListComponent implements OnInit, OnDestroy {
 
   // ─── Métricas ────────────────────────────────────────────────────────────
 
+  private get filtrosActuales() {
+    return {
+      nombre: this.busqueda || undefined,
+      status: this.statusFiltro || undefined,
+      marca: this.marcaFiltro || undefined,
+      categoriaId: this.catFiltro,
+      talle: this.talleFiltro || undefined,
+      color: this.colorFiltro || undefined,
+    };
+  }
+
+  /** Las tarjetas cuentan todos los productos, no solo los de la página visible */
   calcularMetricas(): void {
     this.totalProductos = this.totalElementos;
-    this.conVariantes = this.productos.filter((p) => p.tieneVariantes).length;
-    this.stockBajoCount = this.productos.filter(
-      (p) => p.stockBajo && p.stockTotal > 0
-    ).length;
-    this.sinStockCount = this.productos.filter(
-      (p) => p.stockTotal === 0
-    ).length;
+    const contar = (extra: { stock?: string; conVariantes?: boolean }) =>
+      this.productService.listar({ ...this.filtrosActuales, ...extra, size: 1 }).pipe(
+        map((p) => p.totalElements),
+        catchError(() => of(0))
+      );
+    this.metricasSub?.unsubscribe();
+    this.metricasSub = forkJoin({
+      conVariantes: contar({ stock: this.stockFiltro || undefined, conVariantes: true }),
+      bajo: contar({ stock: 'BAJO' }),
+      sin: contar({ stock: 'SIN' }),
+    }).subscribe((m) => {
+      this.conVariantes = m.conVariantes;
+      this.stockBajoCount = m.bajo;
+      this.sinStockCount = m.sin;
+    });
   }
 
   // ─── Filtros ─────────────────────────────────────────────────────────────
@@ -214,9 +242,18 @@ export class ProductListComponent implements OnInit, OnDestroy {
   limpiarFiltros(): void {
     this.busqueda = '';
     this.statusFiltro = 'ACTIVO';
-    this.catFiltro = '';
+    this.catFiltro = null;
+    this.marcaFiltro = '';
+    this.talleFiltro = '';
+    this.colorFiltro = '';
+    this.stockFiltro = '';
     this.page = 0;
     this.cargarProductos();
+  }
+
+  get hayFiltros(): boolean {
+    return !!(this.busqueda || this.statusFiltro !== 'ACTIVO' || this.catFiltro || this.marcaFiltro
+      || this.talleFiltro || this.colorFiltro || this.stockFiltro);
   }
 
   // ─── Paginación ──────────────────────────────────────────────────────────

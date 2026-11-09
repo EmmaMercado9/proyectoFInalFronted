@@ -265,6 +265,7 @@
           (change)="onFilesSelected($event)"
         />
       </div>
+      <app-imagen-internet *ngIf="!edit" [consulta]="consultaImagen" (imagen)="agregarImagenes([$event])" />
 
       <div
         *ngIf="selectedPreviews.length > 0"
@@ -785,6 +786,9 @@
                         (change)="onFilesVariante($event, i)"
                       />
                     </label>
+                  </div>
+                  <div class="min-w-[280px]">
+                    <app-imagen-internet [consulta]="consultaImagen" (imagen)="agregarImagenesVariante([$event], i)" />
                   </div>
                 </td>
 

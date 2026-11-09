@@ -119,6 +119,11 @@ export class ReportesService {
   private http = inject(HttpClient);
   private readonly API = `${environment.apiUrl}/api/admin/reportes`;
 
+  /** Ventas de los últimos 7 días que todavía no tienen Factura C */
+  ventasSinFacturar(): Observable<number> {
+    return this.http.get<number>(`${this.API}/ventas-sin-facturar`);
+  }
+
   /** Fechas en formato yyyy-MM-dd */
   obtener(desde: string, hasta: string): Observable<Reporte> {
     return this.http.get<Reporte>(this.API, { params: new HttpParams().set('desde', desde).set('hasta', hasta) });

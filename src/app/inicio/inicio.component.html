@@ -1,0 +1,86 @@
+<section class="min-h-full bg-gray-50 pb-12 px-4 sm:px-6">
+  <div class="max-w-4xl mx-auto pt-6">
+    <h2 class="text-xl font-bold text-black">Hola{{ nombre ? ', ' + nombre : '' }}</h2>
+    <p class="text-sm text-gray-400 first-letter:uppercase">{{ fecha }}</p>
+
+    @if (esAdmin) {
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+        @for (k of numeros; track k.titulo) {
+          <div class="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+            <p class="text-xs text-gray-500">{{ k.titulo }}</p>
+            <p class="text-2xl font-bold text-black mt-0.5">{{ k.valor }}</p>
+            <p class="text-xs mt-1 text-gray-400">
+              @if (k.variacion !== null) {
+                <span class="font-semibold" [class.text-green-600]="k.variacion >= 0" [class.text-red-500]="k.variacion < 0">
+                  {{ k.variacion > 0 ? '+' : '' }}{{ k.variacion }} %
+                </span>
+                vs. el {{ diaSemana }} pasado
+              } @else {
+                Sin datos del {{ diaSemana }} pasado
+              }
+            </p>
+          </div>
+        } @empty {
+          @if (cargando) {
+            <p class="text-xs text-gray-400 sm:col-span-3"><i class="pi pi-spin pi-spinner mr-1"></i> Cargando…</p>
+          }
+        }
+      </div>
+    }
+
+    <!-- Accesos rápidos -->
+    <div class="grid grid-cols-2 gap-3 mt-4" [class.sm:grid-cols-4]="esAdmin">
+      @for (a of accesos; track a.link; let primero = $first) {
+        <a
+          [routerLink]="a.link"
+          class="flex flex-col items-center justify-center gap-2 rounded-2xl border px-3 py-5 text-sm font-semibold text-center transition"
+          [class.bg-black]="primero"
+          [class.text-white]="primero"
+          [class.border-black]="primero"
+          [class.bg-white]="!primero"
+          [class.text-black]="!primero"
+          [class.border-gray-200]="!primero"
+          [class.hover:bg-gray-50]="!primero"
+        >
+          <i class="pi {{ a.icono }} text-lg"></i>
+          {{ a.texto }}
+        </a>
+      }
+    </div>
+
+    <div class="grid gap-4 mt-4" [class.lg:grid-cols-2]="esAdmin">
+      @if (esAdmin) {
+        <!-- Atención -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 min-w-0">
+          <h3 class="text-sm font-bold text-black mb-2">Atención</h3>
+          @for (a of avisos; track a.texto) {
+            <a [routerLink]="a.link" class="flex items-center justify-between gap-3 py-2.5 border-t border-gray-100 first-of-type:border-0 text-sm text-black hover:text-gray-500">
+              <span class="min-w-0">{{ a.texto }}</span>
+              <i class="pi pi-angle-right text-gray-400 flex-shrink-0"></i>
+            </a>
+          } @empty {
+            <p class="text-sm text-gray-400">{{ cargando ? 'Cargando…' : 'Todo en orden: no hay nada urgente.' }}</p>
+          }
+        </div>
+      }
+
+      <!-- Últimas ventas -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-5 min-w-0">
+        <h3 class="text-sm font-bold text-black mb-2">Últimas ventas</h3>
+        @for (o of ultimas; track o.idOrder) {
+          <a [routerLink]="['/admin/comprobante', o.trackingId]" class="flex items-center justify-between gap-3 py-2.5 border-t border-gray-100 first-of-type:border-0 hover:bg-gray-50">
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-black">{{ o.orderDate | date: 'dd/MM HH:mm' }}</span>
+              <span class="block text-xs text-gray-400 truncate">{{ paymentLabel(o.payment) }}{{ o.status === 'CANCELADA' ? ' · Cancelada' : '' }}</span>
+            </span>
+            <span class="text-sm font-bold flex-shrink-0" [class.line-through]="o.status === 'CANCELADA'" [class.text-gray-400]="o.status === 'CANCELADA'">
+              {{ o.totalAmount | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
+            </span>
+          </a>
+        } @empty {
+          <p class="text-sm text-gray-400">Todavía no hay ventas.</p>
+        }
+      </div>
+    </div>
+  </div>
+</section>

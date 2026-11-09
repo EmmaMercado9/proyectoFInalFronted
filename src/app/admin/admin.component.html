@@ -6,7 +6,7 @@
   >
     <!-- Logo -->
     <div class="px-5 py-4 border-b border-gray-100">
-      <span class="text-xl font-black tracking-widest text-black">CLOUFIT</span>
+      <img src="assets/images/logo-cloufit-negro.png" alt="CLOUFIT" class="h-5 w-auto" />
       <p class="text-[10px] text-gray-400 mt-0.5">Panel de administración</p>
     </div>
 
@@ -21,6 +21,16 @@
       >
         <i class="pi pi-home text-sm w-4 text-center"></i>
         Inicio
+      </a>
+
+      <a
+        routerLink="/admin/consultar"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-camera text-sm w-4 text-center"></i>
+        Consultar producto
       </a>
 
       <a
@@ -231,9 +241,7 @@
       </button>
 
       <!-- Logo mobile -->
-      <span class="md:hidden text-lg font-black tracking-widest text-black">
-        CLOUFIT
-      </span>
+      <img src="assets/images/logo-cloufit-negro.png" alt="CLOUFIT" class="md:hidden h-4 w-auto" />
 
       <!-- Spacer desktop -->
       <div class="hidden md:block flex-1"></div>
@@ -331,7 +339,7 @@
     <div
       class="flex items-center justify-between px-5 py-4 border-b border-gray-100"
     >
-      <span class="text-xl font-black tracking-widest text-black">CLOUFIT</span>
+      <img src="assets/images/logo-cloufit-negro.png" alt="CLOUFIT" class="h-5 w-auto" />
       <button
         type="button"
         aria-label="Cerrar menú"
@@ -353,6 +361,16 @@
       >
         <i class="pi pi-home text-sm w-4 text-center"></i>
         Inicio
+      </a>
+
+      <a
+        routerLink="/admin/consultar"
+        routerLinkActive="bg-gray-100 text-black font-semibold"
+        (click)="showSidebar = false"
+        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 hover:text-black transition"
+      >
+        <i class="pi pi-camera text-sm w-4 text-center"></i>
+        Consultar producto
       </a>
 
       <a

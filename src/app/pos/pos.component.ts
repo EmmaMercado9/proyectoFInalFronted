@@ -23,12 +23,11 @@ import {
 } from 'rxjs';
 
 import { ProductService } from '../services/products.service';
-import { OrderService, OrderRequest, PaymentMethod } from '../services/order.service';
+import { OrderRequest } from '../services/order.service';
 import { UserService } from '../services/user.service';
 import { ClientService, ClienteDTO } from '../services/client.service';
-import { FacturacionService } from '../services/facturacion.service';
-import { PagosService, PlanPago, ajustePorMedio } from '../services/pagos.service';
-import { ErrorHandleService } from '../error/error-handle.service';
+import { CheckoutPagoComponent, DatosPago } from '../shared/checkout/checkout-pago.component';
+import { VentaService } from '../shared/checkout/venta.service';
 import { EscanerService } from '../shared/escaner/escaner.service';
 import { EscanerToggleComponent } from '../shared/escaner/escaner-toggle.component';
 
@@ -49,7 +48,8 @@ export interface PosItem {
   selector: 'app-pos',
   standalone: true,
   templateUrl: './pos.component.html',
-  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent, CheckoutPagoComponent],
+  providers: [VentaService],
 })
 export class PosComponent implements OnInit, OnDestroy {
   @ViewChild('buscarInput') buscarInput!: ElementRef;
@@ -80,35 +80,7 @@ export class PosComponent implements OnInit, OnDestroy {
   nuevoCliente: ClienteDTO = { name: '', username: '', mail: '', dni: '' };
 
   // ─── Checkout ───────────────────────────────────────────────────────────
-  metodoPago:
-    | 'EFECTIVO'
-    | 'TARJETA_DEBITO'
-    | 'TARJETA_CREDITO'
-    | 'TRANSFERENCIA'
-    | 'MERCADOPAGO' = 'EFECTIVO';
-  descuento = 0;
   procesando = false;
-
-  // Planes de pago: descuento en efectivo y cuotas de la tarjeta de crédito
-  planes: PlanPago[] = [];
-  cuotas = 1;
-
-  metodosPago: {
-    value:
-      | 'EFECTIVO'
-      | 'TARJETA_DEBITO'
-      | 'TARJETA_CREDITO'
-      | 'TRANSFERENCIA'
-      | 'MERCADOPAGO';
-    label: string;
-    icon: string;
-  }[] = [
-    { value: 'EFECTIVO', label: 'Efectivo', icon: 'pi-wallet' },
-    { value: 'TARJETA_DEBITO', label: 'Débito', icon: 'pi-credit-card' },
-    { value: 'TARJETA_CREDITO', label: 'Crédito', icon: 'pi-credit-card' },
-    { value: 'TRANSFERENCIA', label: 'Transfer.', icon: 'pi-send' },
-    { value: 'MERCADOPAGO', label: 'MP', icon: 'pi-mobile' },
-  ];
 
   // ─── Debounces ──────────────────────────────────────────────────────────
   private searchSubject = new Subject<string>();
@@ -117,53 +89,18 @@ export class PosComponent implements OnInit, OnDestroy {
 
   // ─── Inyecciones ────────────────────────────────────────────────────────
   private productService = inject(ProductService);
-  private orderService = inject(OrderService);
+  private ventas = inject(VentaService);
   private userService = inject(UserService);
   private clientService = inject(ClientService);
   private router = inject(Router);
   private message = inject(MessageService);
-  private facturacion = inject(FacturacionService);
-  private errorService = inject(ErrorHandleService);
   private escaner = inject(EscanerService);
-  private pagos = inject(PagosService);
-
-  // ─── Facturación al vender (opcional, se recuerda la elección) ──────────
-  facturacionLista = false;
-  esPrueba = true;
-  facturarAlVender = this.leerPreferencia();
 
   private readonly API = `${environment.apiUrl}/api`;
 
   // ─────────────────────────────────────────────────────────────────────────
 
-  private leerPreferencia(): boolean {
-    try {
-      return localStorage.getItem('pos.facturar') === '1';
-    } catch {
-      return false;
-    }
-  }
-
-  cambiarFacturar(valor: boolean): void {
-    this.facturarAlVender = valor;
-    try {
-      localStorage.setItem('pos.facturar', valor ? '1' : '0');
-    } catch {
-      /* sin storage */
-    }
-  }
-
   ngOnInit(): void {
-    this.pagos.planes().subscribe({ next: (p) => (this.planes = p), error: () => (this.planes = []) });
-
-    this.facturacion.estado().subscribe({
-      next: (e) => {
-        this.facturacionLista = e.habilitada;
-        this.esPrueba = e.ambiente !== 'PRODUCCION';
-      },
-      error: () => (this.facturacionLista = false),
-    });
-
     this.subs.push(
       this.searchSubject
         .pipe(debounceTime(350), distinctUntilChanged())
@@ -389,8 +326,6 @@ export class PosComponent implements OnInit, OnDestroy {
 
   limpiarCarrito(): void {
     this.items = [];
-    this.descuento = 0;
-    this.cuotas = 1;
     setTimeout(() => this.buscarInput?.nativeElement?.focus(), 100);
   }
 
@@ -398,47 +333,6 @@ export class PosComponent implements OnInit, OnDestroy {
 
   get subtotal(): number {
     return this.items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
-  }
-
-  /** Subtotal menos el descuento manual: sobre esto se aplica el porcentaje del medio de pago */
-  get baseConDescuento(): number {
-    return Math.max(0, this.subtotal - this.descuento);
-  }
-
-  planDe(medio: string, cuotas = 1): PlanPago | undefined {
-    return this.planes.find((p) => p.medio === medio && p.cuotas === cuotas && p.activo);
-  }
-
-  /** Cuotas habilitadas de la tarjeta de crédito (1, 3, 4, 6…) */
-  get planesCredito(): PlanPago[] {
-    return this.planes.filter((p) => p.medio === 'TARJETA_CREDITO' && p.activo);
-  }
-
-  get porcentajeMedio(): number {
-    return this.planDe(this.metodoPago, this.metodoPago === 'TARJETA_CREDITO' ? this.cuotas : 1)?.porcentaje ?? 0;
-  }
-
-  get ajusteMedio(): number {
-    return ajustePorMedio(this.baseConDescuento, this.porcentajeMedio);
-  }
-
-  get totalFinal(): number {
-    return this.baseConDescuento + this.ajusteMedio;
-  }
-
-  get valorCuota(): number {
-    return this.totalFinal / this.cuotas;
-  }
-
-  /** Etiqueta del botón: "−10 %" / "+15 %" */
-  badgeMedio(medio: string): string | null {
-    const pct = this.planDe(medio)?.porcentaje ?? 0;
-    return pct === 0 ? null : (pct > 0 ? '+' : '−') + Math.abs(pct) + ' %';
-  }
-
-  elegirMedio(medio: PaymentMethod): void {
-    this.metodoPago = medio;
-    this.cuotas = 1;
   }
 
   get cantidadItems(): number {
@@ -547,74 +441,31 @@ export class PosComponent implements OnInit, OnDestroy {
 
   // ─── Confirmar venta ────────────────────────────────────────────────────
 
-  confirmarVenta(): void {
+  confirmarVenta(pago: DatosPago): void {
     if (this.items.length === 0) return;
     this.procesando = true;
 
     const dto: OrderRequest = {
       userId: this.userService.getUserId() ?? undefined,
       clienteId: this.clienteSeleccionado?.idClient ?? undefined,
-      payment: this.metodoPago,
-      cuotas: this.metodoPago === 'TARJETA_CREDITO' ? this.cuotas : undefined,
-      discount: this.descuento > 0 ? this.descuento : undefined,
+      payment: pago.payment,
+      cuotas: pago.cuotas,
+      discount: pago.discount,
       items: this.items.map((i) => ({
         variantId: i.variantId,
         quantity: i.cantidad,
       })),
     };
 
-    this.orderService
-      .crearOrdenAdmin(dto)
-      .pipe(
-        catchError((err) => {
-          this.procesando = false;
-          const msg =
-            apiErrorMessage(err, 'Error al procesar la venta');
-          this.message.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: msg,
-            life: 5000,
-          });
-          return of(null);
-        })
-      )
-      .subscribe((orden) => {
-        if (!orden) return;
+    this.ventas.registrar(
+      dto,
+      pago.facturar,
+      () => {
         this.limpiarCarrito();
         this.limpiarCliente();
-        const irAlComprobante = () => {
-          this.procesando = false;
-          this.router.navigate(['/admin/comprobante', orden.trackingId]);
-        };
-        if (!(this.facturarAlVender && this.facturacionLista)) {
-          irAlComprobante();
-          return;
-        }
-        // La venta ya está guardada: si ARCA falla se avisa y se puede
-        // facturar después desde el comprobante
-        this.facturacion.facturar(orden.idOrder, {}).subscribe({
-          next: (f) => {
-            this.message.add({
-              severity: 'success',
-              summary: 'Venta facturada',
-              detail: `${f.tipoDescripcion} ${f.numeroFormateado} · CAE ${f.cae}`,
-              life: 5000,
-            });
-            irAlComprobante();
-          },
-          error: (err) => {
-            const m = this.errorService.toMessage(err);
-            this.message.add({
-              ...m,
-              summary: 'Venta registrada sin factura',
-              detail: `${m.detail} — Podés facturarla desde el comprobante.`,
-              life: 9000,
-            });
-            irAlComprobante();
-          },
-        });
-      });
+      },
+      () => (this.procesando = false)
+    );
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────

@@ -107,13 +107,39 @@
 
       <!-- Limpiar -->
       <button
-        *ngIf="busqueda || statusFiltro !== 'ACTIVO' || catFiltro"
+        *ngIf="hayFiltros"
         (click)="limpiarFiltros()"
         class="px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition flex items-center gap-1.5"
       >
         <i class="pi pi-times text-xs"></i>
         Limpiar
       </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 mt-2">
+      <select [(ngModel)]="catFiltro" (ngModelChange)="onFiltroChange()" aria-label="Categoría" class="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700">
+        <option [ngValue]="null">Categoría</option>
+        <option *ngFor="let c of listCategory" [ngValue]="c.idCategory">{{ c.nameCategory }}</option>
+      </select>
+      <select [(ngModel)]="marcaFiltro" (ngModelChange)="onFiltroChange()" aria-label="Marca" class="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700">
+        <option value="">Marca</option>
+        <option *ngFor="let m of opciones.marcas" [value]="m">{{ m }}</option>
+      </select>
+      <select [(ngModel)]="talleFiltro" (ngModelChange)="onFiltroChange()" aria-label="Talle" class="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700">
+        <option value="">Talle</option>
+        <option *ngFor="let t of opciones.talles" [value]="t">{{ t }}</option>
+      </select>
+      <select *ngIf="opciones.colores.length" [(ngModel)]="colorFiltro" (ngModelChange)="onFiltroChange()" aria-label="Color" class="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700">
+        <option value="">Color</option>
+        <option *ngFor="let c of opciones.colores" [value]="c">{{ c }}</option>
+      </select>
+      <select [(ngModel)]="stockFiltro" (ngModelChange)="onFiltroChange()" aria-label="Stock" class="w-full min-w-0 border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black transition text-gray-700" [class.col-span-2]="opciones.colores.length" [class.lg:col-span-1]="opciones.colores.length">
+        <option value="">Stock</option>
+        <option value="CON">Con stock</option>
+        <option value="BAJO">Stock bajo</option>
+        <option value="SIN">Sin stock</option>
+      </select>
     </div>
   </div>
 

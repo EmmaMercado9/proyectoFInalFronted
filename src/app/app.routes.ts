@@ -23,6 +23,21 @@ export const routes: Routes = [
       import('./admin/admin.component').then((m) => m.AdminComponent),
     children: [
       {
+        path: '',
+        pathMatch: 'full',
+        title: 'Inicio',
+        loadComponent: () =>
+          import('./inicio/inicio.component').then((m) => m.InicioComponent),
+      },
+      {
+        path: 'consultar',
+        title: 'Consultar producto',
+        loadComponent: () =>
+          import('./consultar-producto/consultar-producto.component').then(
+            (m) => m.ConsultarProductoComponent
+          ),
+      },
+      {
         path: 'category',
         canActivate: [adminGuard],
         title: 'Categorías',

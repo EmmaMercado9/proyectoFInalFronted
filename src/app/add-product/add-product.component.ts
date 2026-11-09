@@ -1,3 +1,4 @@
+import { ImagenInternetComponent } from '../shared/imagen-internet/imagen-internet.component';
 import { apiErrorMessage } from '../error/error-handle.service';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import {
@@ -55,6 +56,7 @@ interface AtributoValorLocal {
     FormsModule,
     CommonModule,
     RouterModule,
+    ImagenInternetComponent,
   ],
 })
 export class AddProductComponent implements OnInit {
@@ -175,11 +177,15 @@ export class AddProductComponent implements OnInit {
   onFilesVariante(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files) return;
+    this.agregarImagenesVariante(Array.from(input.files), index);
+    input.value = '';
+  }
 
+  agregarImagenesVariante(files: File[], index: number): void {
     if (!this.imagenesVariante[index]) this.imagenesVariante[index] = [];
     if (!this.previewsVariante[index]) this.previewsVariante[index] = [];
 
-    Array.from(input.files).forEach((file) => {
+    files.forEach((file) => {
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         this.showError(`${file.name}: tipo no válido`);
         return;
@@ -201,7 +207,6 @@ export class AddProductComponent implements OnInit {
       };
       reader.readAsDataURL(file);
     });
-    input.value = '';
   }
 
   removeImagenVariante(variantIndex: number, imgIndex: number): void {
@@ -538,7 +543,18 @@ export class AddProductComponent implements OnInit {
   onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files) return;
-    Array.from(input.files).forEach((file) => {
+    this.agregarImagenes(Array.from(input.files));
+    input.value = '';
+  }
+
+  /** Lo que se busca en internet: la marca y el nombre cargados */
+  get consultaImagen(): string {
+    const v = this.formProduct?.value ?? {};
+    return `${v.marca ?? ''} ${v.nameProduct ?? ''}`.trim();
+  }
+
+  agregarImagenes(files: File[]): void {
+    files.forEach((file) => {
       if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         this.showError(`${file.name}: tipo no válido`);
         return;
@@ -555,10 +571,12 @@ export class AddProductComponent implements OnInit {
         return;
       this.selectedFiles.push(file);
       const reader = new FileReader();
-      reader.onload = (e: any) => this.selectedPreviews.push(e.target.result);
+      reader.onload = (e: any) => {
+        this.selectedPreviews.push(e.target.result);
+        this.cdr.detectChanges();
+      };
       reader.readAsDataURL(file);
     });
-    input.value = '';
   }
 
   removeImage(index: number): void {

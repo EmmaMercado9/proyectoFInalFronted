@@ -143,6 +143,10 @@
     </div>
   </div>
 
+  <div class="max-w-6xl mx-auto mb-4">
+    <app-camara-lector (abrir)="escaneado = null" (codigo)="buscarPorCodigo($event)" />
+  </div>
+
   <!-- ══ Último código escaneado ═══════════════════════════════════════════ -->
   @if (escaneado; as e) {
     <div

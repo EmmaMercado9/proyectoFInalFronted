@@ -18,6 +18,7 @@ import { UserService } from '../../services/user.service';
 import { ErrorHandleService } from '../../error/error-handle.service';
 import { EscanerService } from '../../shared/escaner/escaner.service';
 import { EscanerToggleComponent } from '../../shared/escaner/escaner-toggle.component';
+import { CamaraLectorComponent } from '../../shared/escaner/camara-lector.component';
 
 /** Lo último leído con la pistola */
 interface Escaneado {
@@ -37,6 +38,7 @@ interface Escaneado {
     ToastModule,
     ConfirmDialogModule,
     EscanerToggleComponent,
+    CamaraLectorComponent,
   ],
 })
 export class ProductListComponent implements OnInit, OnDestroy {

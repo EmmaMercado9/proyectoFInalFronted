@@ -44,9 +44,9 @@ export class ListClientComponent {
   ) {
     this.formClient = form.group({
       name: ['', Validators.required],
-      username: ['', Validators.required],
+      username: [''],
       mail: [''],
-      dni: ['', Validators.required],
+      dni: [''],
     });
   }
   ngOnInit(): void {
@@ -99,7 +99,7 @@ export class ListClientComponent {
         this.isLoading = false;
         this.visibleClient = false;
         this.formClient.reset();
-        this.showSuccess('Usuario creado correctamente');
+        this.showSuccess('Cliente creado correctamente');
         this.getClient();
       });
   }

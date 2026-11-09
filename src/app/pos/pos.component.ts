@@ -31,6 +31,7 @@ import { VentaService } from '../shared/checkout/venta.service';
 import { PreciosMediosComponent } from '../shared/precios-medios/precios-medios.component';
 import { EscanerService } from '../shared/escaner/escaner.service';
 import { EscanerToggleComponent } from '../shared/escaner/escaner-toggle.component';
+import { CamaraLectorComponent } from '../shared/escaner/camara-lector.component';
 
 // ─── Interfaces locales ───────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ export interface PosItem {
   selector: 'app-pos',
   standalone: true,
   templateUrl: './pos.component.html',
-  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent, CheckoutPagoComponent, PreciosMediosComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent, CamaraLectorComponent, CheckoutPagoComponent, PreciosMediosComponent],
   providers: [VentaService],
 })
 export class PosComponent implements OnInit, OnDestroy {

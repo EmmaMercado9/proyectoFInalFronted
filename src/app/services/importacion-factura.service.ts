@@ -13,6 +13,16 @@ export interface TalleImportado {
   stockActual?: number | null;
 }
 
+/** Producto del catálogo al que se puede sumar un renglón de la factura */
+export interface CandidatoProducto {
+  id: string;
+  nombre: string;
+  sku?: string | null;
+  precioVenta: number;
+  sinTalles: boolean;
+  variantes: { varianteId: number; talle?: string | null; stock: number }[];
+}
+
 /** Un modelo (código de artículo) = un producto */
 export interface ModeloImportado {
   codigoArticulo: string;
@@ -22,6 +32,8 @@ export interface ModeloImportado {
   precioVenta: number;
   productoId?: string | null; // si ya existe
   productoExistente?: string | null;
+  coincidencia?: 'CODIGO' | 'NOMBRE' | null;
+  candidatos: CandidatoProducto[];
   talles: TalleImportado[];
 }
 
@@ -34,6 +46,7 @@ export interface ImportacionFactura {
   total: number;
   sumaLineas: number;
   totalCoincide: boolean;
+  generica: boolean; // formato no conocido: hay que revisar lo leído
   yaImportada?: string | null;
   unidades: number;
   modelos: ModeloImportado[];

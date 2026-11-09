@@ -6,11 +6,13 @@ import { MessageService } from 'primeng/api';
 import { finalize } from 'rxjs';
 
 import {
+  CandidatoProducto,
   FacturaImportada,
   ImportacionFactura,
   ImportacionFacturaService,
   ModeloImportado,
   ResultadoImportacion,
+  TalleImportado,
 } from '../services/importacion-factura.service';
 import { CatgoryService } from '../services/catgory.service';
 import { SubCategoriaResponse } from '../model/product.model';
@@ -109,6 +111,37 @@ export class ImportarFacturaComponent implements OnInit {
     this.vista?.modelos.filter((m) => this.esNuevo(m)).forEach((m) => (m.subCategoriaId = this.subcategoriaGeneral));
   }
 
+  /** Asocia el renglón a un producto existente, o null para crearlo como nuevo */
+  elegirProducto(m: ModeloImportado, id: string | null): void {
+    const producto = m.candidatos.find((c) => c.id === id);
+    m.productoId = producto?.id ?? null;
+    m.productoExistente = producto?.nombre ?? null;
+    if (producto) m.precioVenta = producto.precioVenta;
+    m.talles.forEach((t) => {
+      const variante = producto ? this.varianteDe(producto, t) : undefined;
+      t.varianteId = variante?.varianteId ?? null;
+      t.stockActual = variante?.stock ?? null;
+    });
+  }
+
+  private varianteDe(producto: CandidatoProducto, t: TalleImportado) {
+    if (producto.sinTalles) return producto.variantes[0];
+    const talle = t.talle.trim().replace(',', '.').toLowerCase();
+    return (
+      producto.variantes.find((v) => v.talle?.toLowerCase() === talle) ??
+      (talle === 'único' && producto.variantes.length === 1 ? producto.variantes[0] : undefined)
+    );
+  }
+
+  /** Para sacar algo que se leyó mal o que no se quiere cargar */
+  quitar(m: ModeloImportado): void {
+    if (this.vista) this.vista.modelos = this.vista.modelos.filter((x) => x !== m);
+  }
+
+  get unidadesTotales(): number {
+    return this.vista?.modelos.reduce((a, m) => a + this.unidades(m), 0) ?? 0;
+  }
+
   unidades(m: ModeloImportado): number {
     return m.talles.reduce((a, t) => a + t.cantidad, 0);
   }
@@ -125,8 +158,12 @@ export class ImportarFacturaComponent implements OnInit {
     const v = this.vista;
     if (!v || v.yaImportada || this.confirmando) return false;
     if (!v.totalCoincide && !this.revisoDiferencia) return false;
+    if (!v.proveedor?.trim() || !v.cuit?.trim() || !v.numero?.trim() || v.modelos.length === 0) return false;
     return v.modelos.every(
-      (m) => m.nombre?.trim() && m.precioVenta > 0 && m.talles.every((t) => t.talle?.trim())
+      (m) =>
+        m.nombre?.trim() &&
+        m.precioVenta > 0 &&
+        m.talles.every((t) => t.talle?.trim() && t.cantidad >= 1 && t.costoUnitario >= 0)
     );
   }
 

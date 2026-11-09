@@ -28,6 +28,7 @@ import { UserService } from '../services/user.service';
 import { ClientService, ClienteDTO } from '../services/client.service';
 import { CheckoutPagoComponent, DatosPago } from '../shared/checkout/checkout-pago.component';
 import { VentaService } from '../shared/checkout/venta.service';
+import { PreciosMediosComponent } from '../shared/precios-medios/precios-medios.component';
 import { EscanerService } from '../shared/escaner/escaner.service';
 import { EscanerToggleComponent } from '../shared/escaner/escaner-toggle.component';
 
@@ -48,7 +49,7 @@ export interface PosItem {
   selector: 'app-pos',
   standalone: true,
   templateUrl: './pos.component.html',
-  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent, CheckoutPagoComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ToastModule, EscanerToggleComponent, CheckoutPagoComponent, PreciosMediosComponent],
   providers: [VentaService],
 })
 export class PosComponent implements OnInit, OnDestroy {
@@ -450,6 +451,7 @@ export class PosComponent implements OnInit, OnDestroy {
       clienteId: this.clienteSeleccionado?.idClient ?? undefined,
       payment: pago.payment,
       cuotas: pago.cuotas,
+      pagos: pago.pagos,
       discount: pago.discount,
       items: this.items.map((i) => ({
         variantId: i.variantId,

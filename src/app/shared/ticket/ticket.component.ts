@@ -14,7 +14,7 @@ interface Linea {
   importe: number;
 }
 
-const ES_AJUSTE = /^(Descuento$|Descuento por pago en |Recargo por pago en )/;
+const ES_AJUSTE = /^(Descuento$|(Descuento|Recargo) por pago (en |combinado$))/;
 const ES_DEVOLUCION = /^Devoluciones anteriores a la factura$/;
 
 /**

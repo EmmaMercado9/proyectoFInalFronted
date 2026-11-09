@@ -59,6 +59,7 @@
               <div class="min-w-0">
                 <p class="text-sm font-semibold text-black">{{ v.esDefault ? 'Sin talle' : v.descripcion || v.sku }}</p>
                 <p class="text-xs text-gray-500">{{ v.precioVenta | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</p>
+                <app-precios-medios [precio]="v.precioVenta" />
               </div>
               <span class="text-sm font-bold flex-shrink-0" [class.text-red-500]="v.stock <= 0" [class.text-black]="v.stock > 0">
                 {{ v.stock }} u.

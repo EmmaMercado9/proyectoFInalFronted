@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, shareReplay, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { PaymentMethod } from './order.service';
 
@@ -17,12 +17,18 @@ export class PagosService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
+  private planes$?: Observable<PlanPago[]>;
+
+  /** Se cachea: los piden muchos componentes; se invalida al guardar */
   planes(): Observable<PlanPago[]> {
-    return this.http.get<PlanPago[]>(`${this.apiUrl}/api/pagos/planes`);
+    this.planes$ ??= this.http.get<PlanPago[]>(`${this.apiUrl}/api/pagos/planes`).pipe(shareReplay(1));
+    return this.planes$;
   }
 
   guardar(planes: PlanPago[]): Observable<PlanPago[]> {
-    return this.http.put<PlanPago[]>(`${this.apiUrl}/api/admin/pagos/planes`, planes);
+    return this.http
+      .put<PlanPago[]>(`${this.apiUrl}/api/admin/pagos/planes`, planes)
+      .pipe(tap(() => (this.planes$ = undefined)));
   }
 }
 

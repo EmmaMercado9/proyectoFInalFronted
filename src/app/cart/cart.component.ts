@@ -185,6 +185,7 @@ export class CartComponent implements OnInit {
       clienteId: this.clienteSeleccionado?.idClient ?? undefined,
       payment: pago.payment,
       cuotas: pago.cuotas,
+      pagos: pago.pagos,
       discount: pago.discount,
       items: this.items.map((i) => ({
         variantId: i.variantId,

@@ -400,7 +400,7 @@
                 [class.text-white]="formaReintegro === 'MISMO_MEDIO'"
                 [class.border-gray-200]="formaReintegro !== 'MISMO_MEDIO'"
               >
-                Mismo medio ({{ paymentLabel(orden.payment) }})
+                Mismo medio ({{ paymentLabel(orden.mediosDescripcion ?? orden.payment) }})
               </button>
             </div>
           </div>

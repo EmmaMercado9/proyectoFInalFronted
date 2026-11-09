@@ -135,6 +135,7 @@
                 {{ p.cantidadVariantes }} var.
               </span>
             </div>
+            <app-precios-medios [precio]="p.precioVenta" />
           </div>
 
           <!-- Precio y stock -->
@@ -512,6 +513,7 @@
             <p class="font-mono text-[10px] text-gray-400 mt-0.5">
               {{ v.sku }}
             </p>
+            <app-precios-medios [precio]="v.precioVenta ?? productoSeleccionado.precioVenta" />
           </div>
 
           <div class="text-right flex-shrink-0">

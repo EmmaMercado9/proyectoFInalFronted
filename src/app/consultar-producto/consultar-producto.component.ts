@@ -6,12 +6,13 @@ import { catchError, finalize, of } from 'rxjs';
 import { ProductService } from '../services/products.service';
 import { ProductResponse } from '../model/product.model';
 import { EscanerService } from '../shared/escaner/escaner.service';
+import { PreciosMediosComponent } from '../shared/precios-medios/precios-medios.component';
 
 /** Consulta rápida desde el celular: escanea o busca y muestra stock y precio por talle. */
 @Component({
   selector: 'app-consultar-producto',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PreciosMediosComponent],
   templateUrl: './consultar-producto.component.html',
 })
 export class ConsultarProductoComponent implements OnDestroy {

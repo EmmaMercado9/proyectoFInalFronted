@@ -9,6 +9,7 @@ import { FacturacionService } from '../../services/facturacion.service';
 export interface DatosPago {
   payment: PaymentMethod;
   cuotas?: number;
+  pagos?: { medio: PaymentMethod; cuotas?: number; monto: number }[];
   discount?: number;
   facturar: boolean;
 }
@@ -33,6 +34,10 @@ export class CheckoutPagoComponent implements OnInit {
   cuotas = 1;
   descuento = 0;
   planes: PlanPago[] = [];
+
+  // Pago combinado: el último renglón siempre cubre lo que falta
+  combinado = false;
+  filas: { medio: PaymentMethod; cuotas: number; monto: number | null }[] = [];
 
   // Facturación al vender (opcional, se recuerda la elección)
   facturacionLista = false;
@@ -94,7 +99,66 @@ export class CheckoutPagoComponent implements OnInit {
   }
 
   get ajusteMedio(): number {
+    if (this.combinado) return this.filas.reduce((a, _, i) => a + this.ajusteFila(i), 0);
     return ajustePorMedio(this.baseConDescuento, this.porcentajeMedio);
+  }
+
+  /** Los medios habilitados: no se puede combinar con ninguno que no exista */
+  get mediosDisponibles() {
+    return this.metodosPago.filter((m) => this.planes.some((p) => p.medio === m.value && p.activo));
+  }
+
+  activarCombinado(): void {
+    const [a, b] = this.mediosDisponibles;
+    this.filas = [
+      { medio: a.value, cuotas: 1, monto: null },
+      { medio: (b ?? a).value, cuotas: 1, monto: null },
+    ];
+    this.combinado = true;
+  }
+
+  desactivarCombinado(): void {
+    this.combinado = false;
+    this.filas = [];
+  }
+
+  agregarFila(): void {
+    this.filas.push({ medio: this.mediosDisponibles[0].value, cuotas: 1, monto: null });
+  }
+
+  quitarFila(i: number): void {
+    this.filas.splice(i, 1);
+    if (this.filas.length < 2) this.desactivarCombinado();
+  }
+
+  elegirMedioFila(i: number): void {
+    this.filas[i].cuotas = 1;
+  }
+
+  esUltimaFila(i: number): boolean {
+    return i === this.filas.length - 1;
+  }
+
+  montoFila(i: number): number {
+    if (!this.esUltimaFila(i)) return this.filas[i].monto ?? 0;
+    const otras = this.filas.slice(0, -1).reduce((a, f) => a + (f.monto ?? 0), 0);
+    return Math.round((this.baseConDescuento - otras) * 100) / 100;
+  }
+
+  private porcentajeFila(i: number): number {
+    return this.planDe(this.filas[i].medio, this.filas[i].cuotas)?.porcentaje ?? 0;
+  }
+
+  ajusteFila(i: number): number {
+    return ajustePorMedio(this.montoFila(i), this.porcentajeFila(i));
+  }
+
+  cobrarFila(i: number): number {
+    return this.montoFila(i) + this.ajusteFila(i);
+  }
+
+  get puedeConfirmar(): boolean {
+    return !this.combinado || this.filas.every((_, i) => this.montoFila(i) > 0);
   }
 
   get totalFinal(): number {
@@ -117,6 +181,20 @@ export class CheckoutPagoComponent implements OnInit {
   }
 
   enviar(): void {
+    if (this.combinado) {
+      const pagos = this.filas.map((f, i) => ({
+        medio: f.medio,
+        cuotas: f.medio === 'TARJETA_CREDITO' ? f.cuotas : undefined,
+        monto: this.montoFila(i),
+      }));
+      this.confirmar.emit({
+        payment: pagos.reduce((a, b) => (b.monto > a.monto ? b : a)).medio,
+        pagos,
+        discount: this.descuento > 0 ? this.descuento : undefined,
+        facturar: this.facturarAlVender && this.facturacionLista,
+      });
+      return;
+    }
     this.confirmar.emit({
       payment: this.metodoPago,
       cuotas: this.metodoPago === 'TARJETA_CREDITO' ? this.cuotas : undefined,

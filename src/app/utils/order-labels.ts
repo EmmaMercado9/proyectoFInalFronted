@@ -43,11 +43,22 @@ export function statusClass(status: string): string {
 }
 
 export function paymentLabel(payment?: string | null): string {
-  return payment ? (PAYMENT_LABEL[payment] ?? payment) : '—';
+  if (!payment) return '—';
+  // Listados de pagos combinados: "EFECTIVO + TARJETA_DEBITO"
+  return payment.split(' + ').map((m) => PAYMENT_LABEL[m] ?? m).join(' + ');
 }
 
 /** "Tarjeta crédito · 6 cuotas" */
-export function pagoConCuotas(orden: { payment?: string | null; cuotas?: number | null }): string {
+export function pagoConCuotas(orden: {
+  payment?: string | null;
+  cuotas?: number | null;
+  pagos?: { medio: string; cuotas: number; total: number }[];
+}): string {
+  if ((orden.pagos?.length ?? 0) > 1) {
+    return orden.pagos!
+      .map((p) => `${pagoConCuotas({ payment: p.medio, cuotas: p.cuotas })} $${p.total.toLocaleString('es-AR')}`)
+      .join(' + ');
+  }
   const cuotas = orden.cuotas ?? 1;
   return paymentLabel(orden.payment) + (cuotas > 1 ? ` · ${cuotas} cuotas` : '');
 }
@@ -58,7 +69,11 @@ export function ajusteMedioLabel(orden: {
   cuotas?: number | null;
   ajustePorcentaje?: number | null;
   ajusteMedioPago?: number | null;
+  pagos?: unknown[];
 }): string {
+  if ((orden.pagos?.length ?? 0) > 1) {
+    return `${(orden.ajusteMedioPago ?? 0) < 0 ? 'Descuento' : 'Recargo'} por pago combinado`;
+  }
   const pct = orden.ajustePorcentaje ?? 0;
   const signo = pct > 0 ? '+' : '−';
   return (orden.ajusteMedioPago ?? 0) < 0

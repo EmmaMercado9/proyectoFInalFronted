@@ -25,6 +25,7 @@ export interface OrderRequest {
   clienteId?: string;
   payment: PaymentMethod;
   cuotas?: number; // solo tarjeta de crédito
+  pagos?: { medio: PaymentMethod; cuotas?: number; monto: number }[]; // pago combinado
   discount?: number;
   address?: string;
   description?: string;
@@ -79,6 +80,8 @@ export interface OrderResponse {
   cuotas?: number;
   ajustePorcentaje?: number; // negativo = descuento, positivo = recargo
   ajusteMedioPago?: number;
+  mediosDescripcion?: string;
+  pagos?: { medio: PaymentMethod; cuotas: number; monto: number; porcentaje: number; ajuste: number; total: number }[];
   totalAmount: number;
   address?: string;
   description?: string;

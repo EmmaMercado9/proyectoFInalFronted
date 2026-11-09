@@ -1,0 +1,5 @@
+{
+  "buildCommand": "node scripts/set-api-url.mjs && npx ng build --configuration production,static",
+  "outputDirectory": "dist/tu-yerba/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}

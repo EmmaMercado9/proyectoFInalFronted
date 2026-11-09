@@ -52,6 +52,10 @@
               ],
               "outputHashing": "all"
             },
+            "static": {
+              "ssr": false,
+              "prerender": false
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,

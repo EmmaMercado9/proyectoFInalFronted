@@ -13,7 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { UserService } from '../services/user.service';
 import { ErrorHandleService } from '../error/error-handle.service';
 
-const DURACION_MINIMA_MS = 900;
+const DURACION_MINIMA_MS = 1400;
 
 @Component({
   selector: 'app-singin',

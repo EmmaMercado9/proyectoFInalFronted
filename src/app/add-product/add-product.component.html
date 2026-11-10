@@ -491,25 +491,23 @@
         propio SKU, código de barras, precio de venta y costo.
       </p>
 
-      <!-- SKU base: prefijo del SKU de cada variante -->
+      <!-- SKU del artículo: el que viene en la etiqueta -->
       <div class="mb-4 ml-9 flex flex-wrap items-center gap-3">
         <label for="skuBase" class="text-[10px] font-semibold text-gray-500 uppercase">
-          SKU base
+          SKU del artículo
         </label>
         <div class="relative inline-block">
           <input
             id="skuBase"
             formControlName="sku"
             type="text"
-            placeholder="REM-BAS"
+            placeholder="El de la etiqueta"
             class="w-48 border border-gray-200 rounded-lg pl-2.5 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
           />
           <app-escanear-campo [control]="formProduct.get('sku')" [texto]="'sku'" />
         </div>
         <span class="text-[11px] text-gray-400">
-          Las variantes nuevas se arman como
-          <span class="font-mono">{{ skuBase }}-S</span>,
-          <span class="font-mono">{{ skuBase }}-ROJO</span>…
+          Si cada talle trae su propio SKU en la etiqueta, cargalo en la variante; si no, dejalo vacío.
         </span>
       </div>
 

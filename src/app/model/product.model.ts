@@ -16,7 +16,7 @@ export interface ProductRequest {
 }
 
 export interface VarianteRequest {
-  sku: string;
+  sku?: string;
   codigoBarra?: string;
   precioVenta?: number;
   precioPro?: number;

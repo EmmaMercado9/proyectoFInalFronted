@@ -246,11 +246,6 @@ export class AddProductComponent implements OnInit {
     return this.formProduct.get('listVariants') as FormArray;
   }
 
-  /** Prefijo del SKU de las variantes (el SKU del producto) */
-  get skuBase(): string {
-    return (this.formProduct.get('sku')?.value || 'VAR').toString().trim().toUpperCase();
-  }
-
   get tieneVariantes(): boolean {
     return this.formProduct.get('tieneVariantes')?.value ?? false;
   }
@@ -489,7 +484,7 @@ export class AddProductComponent implements OnInit {
       variantId: [v.variantId ?? null],
       status: [v.status ?? 'ACTIVO'],
       stockOriginal: [v.variantId ? v.stock : null],
-      sku: [v.sku, Validators.required],
+      sku: [v.sku],
       codigoBarra: [v.codigoBarra ?? ''],
       precioVenta: [v.precioVenta ?? null, [Validators.required, Validators.min(0.01)]],
       precioPro: [v.precioPro ?? null, Validators.min(0)],
@@ -719,8 +714,6 @@ export class AddProductComponent implements OnInit {
       combinaciones = nuevas;
     }
 
-    const skuBase = this.skuBase;
-
     // Las variantes ya guardadas (con variantId) se conservan: el backend no
     // permite borrarlas ni cambiar sus atributos. Solo se regeneran las nuevas.
     this.quitarVariantesNuevas();
@@ -730,13 +723,11 @@ export class AddProductComponent implements OnInit {
 
     combinaciones.forEach((combo) => {
       if (existentes.has(this.firma(combo))) return;
-      const sufijo = combo
-        .map((a) => a.valor.toUpperCase().replace(/\s+/g, '').slice(0, 4))
-        .join('-');
 
       this.listVariants.push(
         this.crearGrupoVariante({
-          sku: `${skuBase}-${sufijo}`,
+          // El SKU se carga a mano con el de la etiqueta (no se inventa)
+          sku: '',
           // Si se cargó un precio/costo para "aplicar a todas", se usa de inicio
           precioVenta: this.bulkPrecio,
           costo: this.bulkCosto,
@@ -1136,7 +1127,7 @@ export class AddProductComponent implements OnInit {
 
       ops.push(
         this._productService.actualizarVariante(g.variantId, {
-          sku: g.sku,
+          sku: g.sku?.trim() || undefined,
           codigoBarra: g.codigoBarra || undefined,
           precioVenta: +g.precioVenta,
           precioPro: g.precioPro || null,
@@ -1156,7 +1147,7 @@ export class AddProductComponent implements OnInit {
 
   private toVarianteRequest(g: any): VarianteRequest {
     return {
-      sku: g.sku,
+      sku: g.sku?.trim() || undefined,
       codigoBarra: g.codigoBarra || undefined,
       precioVenta: +g.precioVenta,
       precioPro: g.precioPro || undefined,

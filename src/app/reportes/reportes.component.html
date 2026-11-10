@@ -131,7 +131,7 @@
         <!-- Para comprar -->
         <div class="bg-white border border-gray-200 rounded-2xl p-5 min-w-0">
           <h3 class="text-sm font-bold text-black mb-2">Para comprar</h3>
-          @for (x of paraComprar; track x.sku) {
+          @for (x of paraComprar; track $index) {
             <div class="flex items-center justify-between gap-3 py-2 border-t border-gray-100 first:border-0">
               <div class="min-w-0">
                 <p class="text-sm font-medium text-black truncate">{{ x.producto }}</p>
@@ -221,7 +221,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (x of r.recomendaciones.reponer; track x.sku) {
+              @for (x of r.recomendaciones.reponer; track $index) {
                 <tr class="border-t border-gray-100">
                   <td class="py-1.5 pr-2">{{ x.producto }}</td>
                   <td class="py-1.5">{{ x.variante }}</td>

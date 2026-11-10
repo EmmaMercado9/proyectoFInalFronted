@@ -34,7 +34,7 @@ import { LectorTextoComponent } from './lector-texto.component';
         <div class="w-full max-w-sm bg-white rounded-2xl p-3" (click)="$event.stopPropagation()">
           @if (texto) {
             <p class="text-xs font-semibold text-gray-600 mb-2">Sacale una foto al texto</p>
-            <app-lector-texto (texto)="poner($event)" (cancelada)="camara = false" />
+            <app-lector-texto [sku]="texto === 'sku'" (texto)="poner($event)" (cancelada)="camara = false" />
           } @else {
             <p class="text-xs font-semibold text-gray-600 mb-2">Apuntá al código de barras</p>
             <app-camara-lector [autoIniciar]="true" (codigo)="poner($event)" (cancelada)="camara = false" />
@@ -46,8 +46,8 @@ import { LectorTextoComponent } from './lector-texto.component';
 })
 export class EscanearCampoComponent implements OnDestroy {
   @Input({ required: true }) control!: AbstractControl | null;
-  /** true: el campo es texto (nombre, SKU): la cámara lee letras, no códigos de barras */
-  @Input() texto = false;
+  /** true o 'sku': el campo es texto (nombre, SKU): la cámara lee letras, no códigos de barras */
+  @Input() texto: boolean | 'sku' = false;
 
   private escaner = inject(EscanerService);
   private cancelar?: () => void;

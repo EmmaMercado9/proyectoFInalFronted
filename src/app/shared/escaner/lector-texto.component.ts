@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 
 /**
  * Lee texto impreso (nombre, SKU de la etiqueta) con la cámara: se saca una foto,
@@ -47,6 +47,8 @@ import { Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, ViewChi
   `,
 })
 export class LectorTextoComponent implements OnInit, OnDestroy {
+  /** Para SKU: solo letras, números y guiones, en mayúsculas */
+  @Input() sku = false;
   @Output() texto = new EventEmitter<string>();
   @Output() cancelada = new EventEmitter<void>();
 
@@ -95,20 +97,36 @@ export class LectorTextoComponent implements OnInit, OnDestroy {
     this.error = '';
     try {
       const recorte = this.recortar(v);
-      const { createWorker } = await import('tesseract.js');
+      // tesseract.js es CommonJS: según cómo se empaquete, las funciones quedan en "default"
+      const modulo: any = await import('tesseract.js');
+      const createWorker = modulo.createWorker ?? modulo.default?.createWorker;
       const worker = await createWorker('spa');
+      if (this.sku) {
+        await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-./ ' });
+      }
       const { data } = await worker.recognize(recorte);
       await worker.terminate();
-      this.lineas = data.text
-        .split('\n')
-        .map((l) => l.replace(/\s+/g, ' ').trim())
-        .filter((l) => l.replace(/[^\p{L}\p{N}]/gu, '').length >= 2);
+      this.lineas = this.opciones(data.text);
       this.cerrarCamara();
     } catch {
       this.error = 'No se pudo leer el texto. Revisá la conexión a internet y probá de nuevo.';
     } finally {
       this.leyendo = false;
     }
+  }
+
+  /** Las líneas leídas; para SKU también cada palabra que tenga números (el código suelto) */
+  private opciones(texto: string): string[] {
+    let lineas = texto
+      .split('\n')
+      .map((l) => l.replace(/\s+/g, ' ').trim())
+      .filter((l) => l.replace(/[^\p{L}\p{N}]/gu, '').length >= 2);
+    if (this.sku) {
+      lineas = lineas.map((l) => l.toUpperCase());
+      const codigos = lineas.flatMap((l) => l.split(' ')).filter((p) => p.length >= 3 && /\d/.test(p));
+      lineas = [...codigos, ...lineas];
+    }
+    return [...new Set(lineas)];
   }
 
   otraFoto(): void {

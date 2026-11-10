@@ -38,6 +38,8 @@ export class CamaraLectorComponent implements OnInit, OnDestroy {
   error = '';
 
   private controles: { stop(): void } | null = null;
+  private stream: MediaStream | null = null;
+  private destruido = false;
   private ultimo = { codigo: '', momento: 0 };
 
   ngOnInit(): void {
@@ -45,6 +47,7 @@ export class CamaraLectorComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
     this.detener();
   }
 
@@ -58,24 +61,42 @@ export class CamaraLectorComponent implements OnInit, OnDestroy {
     this.activa = true;
     await new Promise((r) => setTimeout(r));
     try {
+      // La cámara se pide acá (y no dentro del lector) para poder apagarla siempre al salir
+      this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+      if (this.cancelado()) return;
       const { BrowserMultiFormatReader } = await import('@zxing/browser');
-      this.controles = await new BrowserMultiFormatReader().decodeFromConstraints(
-        { video: { facingMode: { ideal: 'environment' } } },
+      if (this.cancelado()) return;
+      this.controles = await new BrowserMultiFormatReader().decodeFromStream(
+        this.stream,
         this.video!.nativeElement,
         (resultado) => {
           if (resultado) this.leido(resultado.getText());
         }
       );
+      this.cancelado();
     } catch {
-      this.activa = false;
-      this.error = 'No se pudo abrir la cámara. Revisá el permiso en el navegador.';
+      this.detener();
+      if (!this.destruido) this.error = 'No se pudo abrir la cámara. Revisá el permiso en el navegador.';
     }
   }
 
   detener(): void {
     this.controles?.stop();
     this.controles = null;
+    // Apagar la cámara ya: si queda prendida, la próxima pantalla no la puede abrir
+    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream = null;
+    if (this.video) this.video.nativeElement.srcObject = null;
     this.activa = false;
+  }
+
+  /** Si mientras se abría la cámara se salió de la pantalla o se cerró, se apaga */
+  private cancelado(): boolean {
+    if (this.destruido || !this.activa) {
+      this.detener();
+      return true;
+    }
+    return false;
   }
 
   private leido(texto: string): void {

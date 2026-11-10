@@ -60,12 +60,14 @@ export class LectorTextoComponent implements OnInit, OnDestroy {
   error = '';
 
   private stream: MediaStream | null = null;
+  private destruido = false;
 
   ngOnInit(): void {
     this.abrirCamara();
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
     this.cerrarCamara();
   }
 
@@ -80,13 +82,17 @@ export class LectorTextoComponent implements OnInit, OnDestroy {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
       });
+      // Si se cerró mientras se abría, se apaga enseguida
+      if (this.destruido) return this.cerrarCamara();
       await new Promise((r) => setTimeout(r));
+      if (this.destruido) return this.cerrarCamara();
       const v = this.video!.nativeElement;
       v.srcObject = this.stream;
       await v.play();
       this.lista = true;
     } catch {
-      this.error = 'No se pudo abrir la cámara. Revisá el permiso en el navegador.';
+      this.cerrarCamara();
+      if (!this.destruido) this.error = 'No se pudo abrir la cámara. Revisá el permiso en el navegador.';
     }
   }
 
@@ -162,6 +168,7 @@ export class LectorTextoComponent implements OnInit, OnDestroy {
   private cerrarCamara(): void {
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
+    if (this.video) this.video.nativeElement.srcObject = null;
     this.lista = false;
   }
 }

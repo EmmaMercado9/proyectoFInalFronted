@@ -1,5 +1,6 @@
 import { EscanearCampoComponent } from '../shared/escaner/escanear-campo.component';
 import { ImagenInternetComponent } from '../shared/imagen-internet/imagen-internet.component';
+import { comprimirImagen } from '../shared/imagen/comprimir-imagen';
 import { apiErrorMessage } from '../error/error-handle.service';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import {
@@ -187,28 +188,32 @@ export class AddProductComponent implements OnInit {
     if (!this.imagenesVariante[index]) this.imagenesVariante[index] = [];
     if (!this.previewsVariante[index]) this.previewsVariante[index] = [];
 
-    files.forEach((file) => {
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        this.showError(`${file.name}: tipo no válido`);
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        this.showError(`${file.name}: supera 2MB`);
-        return;
-      }
+    files.forEach(async (original) => {
+      const file = await this.prepararImagen(original);
+      if (!file) return;
       const yaExiste = this.imagenesVariante[index].some(
         (f) => f.name === file.name && f.size === file.size
       );
       if (yaExiste) return;
 
       this.imagenesVariante[index].push(file);
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.previewsVariante[index].push(e.target.result);
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
+      this.previewsVariante[index].push(URL.createObjectURL(file));
+      this.cdr.detectChanges();
     });
+  }
+
+  /** Valida que sea una imagen y la achica para subirla (las del celular pesan varios MB) */
+  private async prepararImagen(file: File): Promise<File | null> {
+    if (!file.type.startsWith('image/')) {
+      this.showError(`${file.name}: no es una imagen`);
+      return null;
+    }
+    try {
+      return await comprimirImagen(file);
+    } catch {
+      this.showError(`${file.name}: no se pudo leer la imagen. Probá con una foto JPG o PNG.`);
+      return null;
+    }
   }
 
   removeImagenVariante(variantIndex: number, imgIndex: number): void {
@@ -556,15 +561,9 @@ export class AddProductComponent implements OnInit {
   }
 
   agregarImagenes(files: File[]): void {
-    files.forEach((file) => {
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        this.showError(`${file.name}: tipo no válido`);
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        this.showError(`${file.name}: supera 2MB`);
-        return;
-      }
+    files.forEach(async (original) => {
+      const file = await this.prepararImagen(original);
+      if (!file) return;
       if (
         this.selectedFiles.some(
           (f) => f.name === file.name && f.size === file.size
@@ -572,12 +571,8 @@ export class AddProductComponent implements OnInit {
       )
         return;
       this.selectedFiles.push(file);
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.selectedPreviews.push(e.target.result);
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
+      this.selectedPreviews.push(URL.createObjectURL(file));
+      this.cdr.detectChanges();
     });
   }
 

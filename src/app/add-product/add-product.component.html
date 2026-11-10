@@ -54,7 +54,7 @@
               [class.border-red-400]="hasError('nameProduct', 'required')"
               [class.border-gray-200]="!hasError('nameProduct', 'required')"
             />
-            <app-escanear-campo [control]="formProduct.get('nameProduct')" />
+            <app-escanear-campo [control]="formProduct.get('nameProduct')" [texto]="true" />
           </div>
           <p
             *ngIf="hasError('nameProduct', 'required')"
@@ -116,7 +116,7 @@
               placeholder="NIKE-AM-270"
               class="w-full border border-gray-200 rounded-xl pl-3.5 pr-14 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
             />
-            <app-escanear-campo [control]="formProduct.get('sku')" />
+            <app-escanear-campo [control]="formProduct.get('sku')" [texto]="true" />
           </div>
         </div>
 
@@ -504,7 +504,7 @@
             placeholder="REM-BAS"
             class="w-48 border border-gray-200 rounded-lg pl-2.5 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
           />
-          <app-escanear-campo [control]="formProduct.get('sku')" />
+          <app-escanear-campo [control]="formProduct.get('sku')" [texto]="true" />
         </div>
         <span class="text-[11px] text-gray-400">
           Las variantes nuevas se arman como
@@ -659,7 +659,7 @@
                       class="w-full border border-gray-200 rounded-lg pl-2 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
                       placeholder="SKU"
                     />
-                    <app-escanear-campo [control]="item.get('sku')" />
+                    <app-escanear-campo [control]="item.get('sku')" [texto]="true" />
                   </div>
                 </td>
 

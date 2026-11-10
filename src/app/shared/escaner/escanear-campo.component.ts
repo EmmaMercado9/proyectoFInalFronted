@@ -2,6 +2,7 @@ import { Component, Input, OnDestroy, inject } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 import { EscanerService } from './escaner.service';
 import { CamaraLectorComponent } from './camara-lector.component';
+import { LectorTextoComponent } from './lector-texto.component';
 
 /**
  * Dos íconos chicos para poner dentro de un campo: leer el código con la
@@ -11,16 +12,18 @@ import { CamaraLectorComponent } from './camara-lector.component';
 @Component({
   selector: 'app-escanear-campo',
   standalone: true,
-  imports: [CamaraLectorComponent],
+  imports: [CamaraLectorComponent, LectorTextoComponent],
   template: `
     <div class="absolute inset-y-0 right-1 flex items-center gap-0.5">
-      <button type="button" (click)="usarPistola()"
-        [title]="esperando ? 'Escaneá ahora con la pistola (tocá para cancelar)' : 'Leer con la pistola'"
-        class="w-6 h-6 flex items-center justify-center rounded-md transition"
-        [class]="esperando ? 'bg-black text-white animate-pulse' : 'text-gray-400 hover:text-black hover:bg-gray-100'">
-        <i class="pi pi-barcode text-[11px]"></i>
-      </button>
-      <button type="button" (click)="camara = true" title="Leer con la cámara"
+      @if (!texto) {
+        <button type="button" (click)="usarPistola()"
+          [title]="esperando ? 'Escaneá ahora con la pistola (tocá para cancelar)' : 'Leer con la pistola'"
+          class="w-6 h-6 flex items-center justify-center rounded-md transition"
+          [class]="esperando ? 'bg-black text-white animate-pulse' : 'text-gray-400 hover:text-black hover:bg-gray-100'">
+          <i class="pi pi-barcode text-[11px]"></i>
+        </button>
+      }
+      <button type="button" (click)="camara = true" [title]="texto ? 'Leer el texto con la cámara' : 'Leer el código con la cámara'"
         class="w-6 h-6 flex items-center justify-center rounded-md text-gray-400 hover:text-black hover:bg-gray-100 transition">
         <i class="pi pi-camera text-[11px]"></i>
       </button>
@@ -29,8 +32,13 @@ import { CamaraLectorComponent } from './camara-lector.component';
     @if (camara) {
       <div class="fixed inset-0 z-[60] bg-black/60 flex items-end sm:items-center justify-center p-4" (click)="camara = false">
         <div class="w-full max-w-sm bg-white rounded-2xl p-3" (click)="$event.stopPropagation()">
-          <p class="text-xs font-semibold text-gray-600 mb-2">Apuntá al código de barras</p>
-          <app-camara-lector [autoIniciar]="true" (codigo)="poner($event)" (cancelada)="camara = false" />
+          @if (texto) {
+            <p class="text-xs font-semibold text-gray-600 mb-2">Sacale una foto al texto</p>
+            <app-lector-texto (texto)="poner($event)" (cancelada)="camara = false" />
+          } @else {
+            <p class="text-xs font-semibold text-gray-600 mb-2">Apuntá al código de barras</p>
+            <app-camara-lector [autoIniciar]="true" (codigo)="poner($event)" (cancelada)="camara = false" />
+          }
         </div>
       </div>
     }
@@ -38,6 +46,8 @@ import { CamaraLectorComponent } from './camara-lector.component';
 })
 export class EscanearCampoComponent implements OnDestroy {
   @Input({ required: true }) control!: AbstractControl | null;
+  /** true: el campo es texto (nombre, SKU): la cámara lee letras, no códigos de barras */
+  @Input() texto = false;
 
   private escaner = inject(EscanerService);
   private cancelar?: () => void;

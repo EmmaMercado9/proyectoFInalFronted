@@ -45,14 +45,17 @@
           >
             Nombre del producto <span class="text-red-500">*</span>
           </label>
-          <input
-            formControlName="nameProduct"
-            type="text"
-            placeholder="Ej: Zapatilla de cuero negra"
-            class="w-full border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
-            [class.border-red-400]="hasError('nameProduct', 'required')"
-            [class.border-gray-200]="!hasError('nameProduct', 'required')"
-          />
+          <div class="relative">
+            <input
+              formControlName="nameProduct"
+              type="text"
+              placeholder="Ej: Zapatilla de cuero negra"
+              class="w-full border rounded-xl pl-3.5 pr-14 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-black transition"
+              [class.border-red-400]="hasError('nameProduct', 'required')"
+              [class.border-gray-200]="!hasError('nameProduct', 'required')"
+            />
+            <app-escanear-campo [control]="formProduct.get('nameProduct')" />
+          </div>
           <p
             *ngIf="hasError('nameProduct', 'required')"
             class="text-xs text-red-500 mt-1 flex items-center gap-1"
@@ -106,12 +109,15 @@
           >
             SKU
           </label>
-          <input
-            formControlName="sku"
-            type="text"
-            placeholder="NIKE-AM-270"
-            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
-          />
+          <div class="relative">
+            <input
+              formControlName="sku"
+              type="text"
+              placeholder="NIKE-AM-270"
+              class="w-full border border-gray-200 rounded-xl pl-3.5 pr-14 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
+            />
+            <app-escanear-campo [control]="formProduct.get('sku')" />
+          </div>
         </div>
 
         <!-- Código de barra -->
@@ -121,12 +127,15 @@
           >
             Código de barra
           </label>
-          <input
-            formControlName="codigoBarra"
-            type="text"
-            placeholder="7791234567890"
-            class="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
-          />
+          <div class="relative">
+            <input
+              formControlName="codigoBarra"
+              type="text"
+              placeholder="7791234567890"
+              class="w-full border border-gray-200 rounded-xl pl-3.5 pr-14 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-black transition"
+            />
+            <app-escanear-campo [control]="formProduct.get('codigoBarra')" />
+          </div>
         </div>
 
         <!-- Categoría -->
@@ -487,13 +496,16 @@
         <label for="skuBase" class="text-[10px] font-semibold text-gray-500 uppercase">
           SKU base
         </label>
-        <input
-          id="skuBase"
-          formControlName="sku"
-          type="text"
-          placeholder="REM-BAS"
-          class="w-40 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
-        />
+        <div class="relative inline-block">
+          <input
+            id="skuBase"
+            formControlName="sku"
+            type="text"
+            placeholder="REM-BAS"
+            class="w-48 border border-gray-200 rounded-lg pl-2.5 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
+          />
+          <app-escanear-campo [control]="formProduct.get('sku')" />
+        </div>
         <span class="text-[11px] text-gray-400">
           Las variantes nuevas se arman como
           <span class="font-mono">{{ skuBase }}-S</span>,
@@ -640,22 +652,28 @@
 
                 <!-- SKU -->
                 <td class="px-3 py-3">
-                  <input
-                    formControlName="sku"
-                    type="text"
-                    class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
-                    placeholder="SKU"
-                  />
+                  <div class="relative">
+                    <input
+                      formControlName="sku"
+                      type="text"
+                      class="w-full border border-gray-200 rounded-lg pl-2 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
+                      placeholder="SKU"
+                    />
+                    <app-escanear-campo [control]="item.get('sku')" />
+                  </div>
                 </td>
 
                 <!-- Código barras -->
                 <td class="px-3 py-3">
-                  <input
-                    formControlName="codigoBarra"
-                    type="text"
-                    class="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
-                    placeholder="7891234..."
-                  />
+                  <div class="relative">
+                    <input
+                      formControlName="codigoBarra"
+                      type="text"
+                      class="w-full border border-gray-200 rounded-lg pl-2 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
+                      placeholder="7891234..."
+                    />
+                    <app-escanear-campo [control]="item.get('codigoBarra')" />
+                  </div>
                 </td>
 
                 <!-- Precio venta -->

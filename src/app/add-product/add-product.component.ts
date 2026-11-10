@@ -1,3 +1,4 @@
+import { EscanearCampoComponent } from '../shared/escaner/escanear-campo.component';
 import { ImagenInternetComponent } from '../shared/imagen-internet/imagen-internet.component';
 import { apiErrorMessage } from '../error/error-handle.service';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
@@ -57,6 +58,7 @@ interface AtributoValorLocal {
     CommonModule,
     RouterModule,
     ImagenInternetComponent,
+    EscanearCampoComponent,
   ],
 })
 export class AddProductComponent implements OnInit {

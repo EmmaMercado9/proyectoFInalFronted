@@ -27,6 +27,9 @@ export class EscanerService implements OnDestroy {
   private readonly activo$ = new BehaviorSubject<boolean>(this.leerPreferencia());
   private readonly codigos = new Subject<string>();
 
+  /** Quien pidió la próxima lectura (un campo del formulario de producto) */
+  private esperando: ((codigo: string) => void) | null = null;
+
   private buffer = '';
   private ultimaTecla = 0;
   private escuchando = false;
@@ -76,6 +79,26 @@ export class EscanerService implements OnDestroy {
     this.dejarDeEscuchar();
   }
 
+  /**
+   * La próxima lectura va solo a quien la pidió (aunque el modo esté apagado).
+   * Devuelve una función para cancelar la espera.
+   */
+  capturarUno(alLeer: (codigo: string) => void): () => void {
+    const propio = (c: string) => {
+      this.terminarCaptura(propio);
+      alLeer(c);
+    };
+    this.esperando = propio;
+    this.escuchar();
+    return () => this.terminarCaptura(propio);
+  }
+
+  private terminarCaptura(quien: (c: string) => void): void {
+    if (this.esperando !== quien) return;
+    this.esperando = null;
+    if (!this.activo) this.dejarDeEscuchar();
+  }
+
   // ─── Detección ──────────────────────────────────────────────────────────
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
@@ -90,7 +113,8 @@ export class EscanerService implements OnDestroy {
         e.preventDefault();
         e.stopPropagation();
         this.limpiarCampo(e.target, codigo);
-        this.zone.run(() => this.codigos.next(codigo));
+        const destino = this.esperando;
+        this.zone.run(() => (destino ? destino(codigo) : this.codigos.next(codigo)));
       }
       return;
     }

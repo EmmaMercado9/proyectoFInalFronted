@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 
 /** Lee códigos de barras con la cámara del dispositivo. */
 @Component({
@@ -10,7 +10,7 @@ import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChil
         <video #video class="w-full aspect-[4/3] object-cover" muted playsinline></video>
         <div class="absolute inset-x-8 top-1/2 h-0.5 bg-red-500"></div>
       </div>
-      <button type="button" (click)="detener()" class="mt-2 w-full py-3 border border-gray-200 bg-white text-sm font-semibold rounded-xl">
+      <button type="button" (click)="detener(); cancelada.emit()" class="mt-2 w-full py-3 border border-gray-200 bg-white text-sm font-semibold rounded-xl">
         {{ continuo ? 'Cerrar cámara' : 'Cancelar' }}
       </button>
     } @else {
@@ -23,11 +23,14 @@ import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChil
     }
   `,
 })
-export class CamaraLectorComponent implements OnDestroy {
+export class CamaraLectorComponent implements OnInit, OnDestroy {
   /** true: sigue leyendo después de cada código (para cargar varios productos) */
   @Input() continuo = false;
+  /** Abre la cámara apenas aparece (sin tocar el botón grande) */
+  @Input() autoIniciar = false;
   @Output() codigo = new EventEmitter<string>();
   @Output() abrir = new EventEmitter<void>();
+  @Output() cancelada = new EventEmitter<void>();
 
   @ViewChild('video') video?: ElementRef<HTMLVideoElement>;
 
@@ -36,6 +39,10 @@ export class CamaraLectorComponent implements OnDestroy {
 
   private controles: { stop(): void } | null = null;
   private ultimo = { codigo: '', momento: 0 };
+
+  ngOnInit(): void {
+    if (this.autoIniciar) this.iniciar();
+  }
 
   ngOnDestroy(): void {
     this.detener();

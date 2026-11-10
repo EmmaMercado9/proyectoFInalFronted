@@ -92,35 +92,19 @@ export class ReportesComponent implements OnInit {
 
   private readonly pesosEnteros = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
 
-  get principales(): { titulo: string; valor: string; variacion: number | null; nota: string }[] {
+  get principales(): { titulo: string; valor: string; variacion: number | null; nota: string; destacada?: boolean }[] {
     if (!this.r) return [];
-    const a = this.r.actual;
-    const b = this.r.anterior;
+    const { actual: a, anterior: b, facturacion: f, inventario: inv } = this.r;
+    const $ = (n: number) => this.pesosEnteros.format(n);
     return [
-      { titulo: 'Vendiste', valor: this.pesosEnteros.format(a.ventasNetas), variacion: this.variacion(a.ventasNetas, b.ventasNetas), nota: '' },
-      { titulo: 'Ganaste', valor: this.pesosEnteros.format(a.gananciaBruta), variacion: this.variacion(a.gananciaBruta, b.gananciaBruta), nota: '' },
+      { titulo: 'Facturación', valor: $(a.ventasNetas), variacion: this.variacion(a.ventasNetas, b.ventasNetas), destacada: true,
+        nota: f.comprobantes ? `${$(f.neto)} con factura electrónica (${f.comprobantes})` : '' },
+      { titulo: 'Ganancia', valor: $(a.gananciaBruta), variacion: this.variacion(a.gananciaBruta, b.gananciaBruta), nota: '' },
       { titulo: 'Ventas', valor: this.numero.format(a.cantidadVentas), variacion: null,
-        nota: `${this.numero.format(a.unidades)} unidades · ticket ${this.pesosEnteros.format(a.ticketPromedio)}` },
+        nota: `${this.numero.format(a.unidades)} unidades · ticket ${$(a.ticketPromedio)}` },
+      { titulo: 'Productos en stock', valor: `${this.numero.format(inv.unidades)} u.`, variacion: null,
+        nota: `valen ${$(inv.valorAlPrecio)}${inv.variantesSinStock ? ` · ${inv.variantesSinStock} talles sin stock` : ''}` },
     ];
-  }
-
-  /** Lo accionable, en una línea cada cosa */
-  get acciones(): string[] {
-    if (!this.r) return [];
-    const { recomendaciones: rec, perdidas } = this.r;
-    const lista: string[] = [];
-    const urgentes = rec.reponer.filter((x) => x.urgente).length;
-    if (rec.reponer.length) {
-      lista.push(`Reponé ${rec.reponer.length} talles${urgentes ? ` (${urgentes} ya sin stock)` : ''}: ${this.pesosEnteros.format(this.inversionSugerida)} aprox.`);
-    }
-    if (this.capitalInmovilizado > 0) {
-      lista.push(`Tenés ${this.pesosEnteros.format(this.capitalInmovilizado)} en mercadería que no se vende hace 90 días: hacé una promo.`);
-    }
-    const perdido = perdidas.perdidaFallados + perdidas.perdidaVentasBajoCosto;
-    if (perdido > 0) {
-      lista.push(`Perdiste ${this.pesosEnteros.format(perdido)} entre fallados y ventas por debajo del costo.`);
-    }
-    return lista;
   }
 
   get paraComprar(): Reposicion[] {
@@ -141,35 +125,7 @@ export class ReportesComponent implements OnInit {
     return this.mejor(this.r?.porMedioDePago) ?? null;
   }
 
-  // ─── "Tu tienda en números" ─────────────────────────────────────────────
-
-  private readonly pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 });
   private readonly numero = new Intl.NumberFormat('es-AR');
-
-  /** Cada indicador con su valor, el del mismo período anterior y la variación. */
-  get indicadores(): { titulo: string; ayuda: string; actual: string; anterior: string; variacion: number | null }[] {
-    if (!this.r) return [];
-    const a = this.r.actual;
-    const b = this.r.anterior;
-    const $ = (n: number) => this.pesos.format(n);
-    const n = (x: number) => this.numero.format(x);
-    const pct = (x: number | null) => (x === null ? '—' : `${x.toLocaleString('es-AR')} %`);
-    return [
-      { titulo: 'Ventas', ayuda: 'Cantidad de ventas registradas en el período (sin las canceladas).',
-        actual: n(a.cantidadVentas), anterior: n(b.cantidadVentas), variacion: this.variacion(a.cantidadVentas, b.cantidadVentas) },
-      { titulo: 'Facturación', ayuda: 'Ventas netas: lo cobrado menos descuentos y devoluciones.',
-        actual: $(a.ventasNetas), anterior: $(b.ventasNetas), variacion: this.variacion(a.ventasNetas, b.ventasNetas) },
-      { titulo: 'Ticket promedio', ayuda: 'Facturación dividida por la cantidad de ventas: cuánto gasta en promedio cada cliente.',
-        actual: $(a.ticketPromedio), anterior: $(b.ticketPromedio), variacion: this.variacion(a.ticketPromedio, b.ticketPromedio) },
-      { titulo: 'Ganancia bruta', ayuda: 'Facturación menos el costo de lo vendido y de los productos fallados devueltos. No incluye gastos fijos.',
-        actual: $(a.gananciaBruta), anterior: $(b.gananciaBruta), variacion: this.variacion(a.gananciaBruta, b.gananciaBruta) },
-      { titulo: 'Margen', ayuda: 'Ganancia bruta sobre facturación: de cada $100 vendidos, cuánto queda de ganancia.',
-        actual: pct(a.margen), anterior: pct(b.margen),
-        variacion: a.margen !== null && b.margen !== null ? Math.round((a.margen - b.margen) * 10) / 10 : null },
-      { titulo: 'Unidades vendidas', ayuda: 'Prendas y pares vendidos, descontando las devoluciones.',
-        actual: n(a.unidades), anterior: n(b.unidades), variacion: this.variacion(a.unidades, b.unidades) },
-    ];
-  }
 
   // ─── Ayudas para la vista ───────────────────────────────────────────────
 
@@ -223,20 +179,70 @@ export class ReportesComponent implements OnInit {
     return i % paso === 0 || i === n - 1;
   }
 
-  alto(p: Punto): number {
-    return Math.round((Math.max(0, p.ventas) / this.maxDia) * 100);
+  // ─── Gráfico de área (SVG) ──────────────────────────────────────────────
+
+  readonly W = 1000;
+  readonly H = 200;
+  readonly Math = Math;
+  hover: number | null = null;
+  private readonly compacto = new Intl.NumberFormat('es-AR', { notation: 'compact', maximumFractionDigits: 1 });
+
+  get ventas(): number[] {
+    return this.puntos.map((p) => p.ventas);
   }
 
-  altoGanancia(p: Punto): number {
-    return Math.round((Math.max(0, p.ganancia) / this.maxDia) * 100);
+  get ganancias(): number[] {
+    return this.puntos.map((p) => p.ganancia);
   }
 
-  get inversionSugerida(): number {
-    return this.r?.recomendaciones.reponer.reduce((a, x) => a + x.costoEstimado, 0) ?? 0;
+  /** Tope del eje: el máximo redondeado hacia arriba, para que la curva no toque el borde */
+  private get tope(): number {
+    const m = this.maxDia;
+    const paso = Math.pow(10, Math.floor(Math.log10(m)));
+    return Math.ceil(m / paso) * paso;
   }
 
-  get capitalInmovilizado(): number {
-    return this.r?.recomendaciones.sinRotacion.reduce((a, x) => a + x.capitalInmovilizado, 0) ?? 0;
+  get guias(): { y: number; texto: string }[] {
+    return [1, 0.5, 0].map((f) => ({ y: (1 - f) * 100, texto: '$' + this.compacto.format(this.tope * f) }));
+  }
+
+  /** Cada punto va en el centro de su columna (igual que las etiquetas de abajo) */
+  private x(i: number): number {
+    return ((i + 0.5) / this.puntos.length) * this.W;
+  }
+
+  private y(v: number): number {
+    return this.H - (Math.max(0, v) / this.tope) * this.H;
+  }
+
+  xPct(i: number): number {
+    return (this.x(i) / this.W) * 100;
+  }
+
+  yPct(v: number): number {
+    return (this.y(v) / this.H) * 100;
+  }
+
+  /** Curva suave entre los puntos (sin pasarse de los valores reales) */
+  curva(valores: number[]): string {
+    if (!valores.length) return '';
+    if (valores.length === 1) return `M0 ${this.y(valores[0])} L${this.W} ${this.y(valores[0])}`;
+    let d = `M${this.x(0)} ${this.y(valores[0])}`;
+    for (let i = 1; i < valores.length; i++) {
+      const x0 = this.x(i - 1);
+      const x1 = this.x(i);
+      const medio = (x0 + x1) / 2;
+      d += ` C${medio} ${this.y(valores[i - 1])} ${medio} ${this.y(valores[i])} ${x1} ${this.y(valores[i])}`;
+    }
+    return d;
+  }
+
+  area(valores: number[]): string {
+    if (!valores.length) return '';
+    const n = valores.length;
+    const ini = n === 1 ? 0 : this.x(0);
+    const fin = n === 1 ? this.W : this.x(n - 1);
+    return `${this.curva(valores)} L${fin} ${this.H} L${ini} ${this.H} Z`;
   }
 
   get hayVentas(): boolean {
@@ -246,11 +252,8 @@ export class ReportesComponent implements OnInit {
   bloques(r: Reporte): { titulo: string; items: Item[]; unidad: string }[] {
     return [
       { titulo: 'Por medio de pago', items: r.porMedioDePago, unidad: 'ventas' },
-      { titulo: 'Por día de la semana', items: r.porDiaDeSemana, unidad: 'ventas' },
       { titulo: 'Por categoría', items: r.porCategoria, unidad: 'unidades' },
       { titulo: 'Por marca', items: r.porMarca, unidad: 'unidades' },
-      { titulo: 'Por vendedor', items: r.porVendedor, unidad: 'ventas' },
-      { titulo: 'Por hora del día', items: r.porHora, unidad: 'ventas' },
     ];
   }
 

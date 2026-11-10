@@ -187,22 +187,53 @@ export class AddProductComponent implements OnInit {
     input.value = '';
   }
 
+  /** La foto va en todos los talles del mismo color (un negro 37 y un negro 38 se ven igual) */
   agregarImagenesVariante(files: File[], index: number): void {
-    if (!this.imagenesVariante[index]) this.imagenesVariante[index] = [];
-    if (!this.previewsVariante[index]) this.previewsVariante[index] = [];
+    const destinos = this.mismoAspecto(index);
+    if (destinos.length > 1 && files.length) {
+      const aspecto = this.aspectoTexto(index);
+      this.message.add({
+        severity: 'info',
+        summary: 'Fotos',
+        detail: `Se agregan a los ${destinos.length} talles${aspecto ? ' ' + aspecto : ''}`,
+        life: 3000,
+      });
+    }
 
     files.forEach(async (original) => {
       const file = await this.prepararImagen(original);
       if (!file) return;
-      const yaExiste = this.imagenesVariante[index].some(
-        (f) => f.name === file.name && f.size === file.size
-      );
-      if (yaExiste) return;
-
-      this.imagenesVariante[index].push(file);
-      this.previewsVariante[index].push(URL.createObjectURL(file));
+      for (const i of destinos) {
+        this.imagenesVariante[i] ??= [];
+        this.previewsVariante[i] ??= [];
+        const yaExiste = this.imagenesVariante[i].some((f) => f.name === file.name && f.size === file.size);
+        if (yaExiste) continue;
+        this.imagenesVariante[i].push(file);
+        this.previewsVariante[i].push(URL.createObjectURL(file));
+      }
       this.cdr.detectChanges();
     });
+  }
+
+  /** Atributos que no son el talle (color, material...): definen cómo se ve la variante */
+  private aspecto(index: number): AtributoValorLocal[] {
+    const atributos: AtributoValorLocal[] = this.listVariants.at(index)?.value.atributos ?? [];
+    return atributos.filter((a) => !/^tall[ae]s?$/i.test((a.nombre ?? '').trim()));
+  }
+
+  /** Índices de las variantes que se ven igual que esta (mismo color; si no hay color, todas) */
+  private mismoAspecto(index: number): number[] {
+    const clave = (i: number) =>
+      this.aspecto(i)
+        .map((a) => `${a.atributoId}:${`${a.valor}`.trim().toLowerCase()}`)
+        .sort()
+        .join('|');
+    const propia = clave(index);
+    return this.listVariants.controls.map((_, i) => i).filter((i) => clave(i) === propia);
+  }
+
+  private aspectoTexto(index: number): string {
+    return this.aspecto(index).map((a) => `${a.valor}`.toLowerCase()).join(' ');
   }
 
   /** Valida que sea una imagen y la achica para subirla (las del celular pesan varios MB) */
@@ -789,7 +820,25 @@ export class AddProductComponent implements OnInit {
       );
       return;
     }
+    const repetido = this.codigoRepetido();
+    if (repetido) {
+      this.showError(`El código de barras ${repetido} está en más de un talle: cada talle lleva el suyo`);
+      return;
+    }
     this.edit ? this.editarProducto() : this.crearProducto();
+  }
+
+  /** Un código de barras identifica un solo talle: se avisa antes de mandar nada */
+  private codigoRepetido(): string | null {
+    if (!this.tieneVariantes) return null;
+    const vistos = new Set<string>();
+    for (const c of this.listVariants.controls) {
+      const codigo = `${c.value.codigoBarra ?? ''}`.trim();
+      if (!codigo) continue;
+      if (vistos.has(codigo)) return codigo;
+      vistos.add(codigo);
+    }
+    return null;
   }
 
   crearProducto(): void {
@@ -854,10 +903,8 @@ export class AddProductComponent implements OnInit {
       .agregarVariante(productId, dto, files)
       .pipe(
         catchError((err) => {
-          this.isLoading = false;
-          this.showError(
-            `Error en variante ${index + 1}: ${apiErrorMessage(err, 'no se pudo crear')}`
-          );
+          const motivo = `Talle ${index + 1}: ${apiErrorMessage(err, 'no se pudo crear')}`;
+          this.deshacerProductoNuevo(productId, motivo);
           return of(null);
         })
       )
@@ -865,6 +912,24 @@ export class AddProductComponent implements OnInit {
         if (!variante) return;
 
         this.crearVariantesSecuencialmente(productId, index + 1);
+      });
+  }
+
+  /**
+   * Si falla un talle, se borra el producto recién creado: si quedara a medias,
+   * el próximo intento chocaría con sus SKU y códigos de barras.
+   */
+  private deshacerProductoNuevo(productId: string, motivo: string): void {
+    this._productService
+      .eliminar(productId)
+      .pipe(catchError(() => of('no-borrado' as const)))
+      .subscribe((r) => {
+        this.isLoading = false;
+        this.showError(
+          r === 'no-borrado'
+            ? `${motivo}. El producto quedó creado sin todos sus talles: revisalo en el inventario.`
+            : `${motivo}. No se guardó nada: corregilo y volvé a guardar.`
+        );
       });
   }
   // ─── Helpers ──────────────────────────────────────────────────────────────

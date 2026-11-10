@@ -103,7 +103,9 @@ export class ReportesComponent implements OnInit {
       { titulo: 'Ventas', valor: this.numero.format(a.cantidadVentas), variacion: null,
         nota: `${this.numero.format(a.unidades)} unidades · ticket ${$(a.ticketPromedio)}` },
       { titulo: 'Productos en stock', valor: `${this.numero.format(inv.unidades)} u.`, variacion: null,
-        nota: `valen ${$(inv.valorAlPrecio)}${inv.variantesSinStock ? ` · ${inv.variantesSinStock} talles sin stock` : ''}` },
+        nota: inv.variantesSinStock ? `${inv.variantesSinStock} talles sin stock` : '' },
+      { titulo: 'Capital invertido', valor: $(inv.valorAlCosto), variacion: null,
+        nota: `al costo · a precio de venta ${$(inv.valorAlPrecio)}` },
     ];
   }
 

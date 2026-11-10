@@ -491,26 +491,6 @@
         propio SKU, código de barras, precio de venta y costo.
       </p>
 
-      <!-- SKU del artículo: el que viene en la etiqueta -->
-      <div class="mb-4 ml-9 flex flex-wrap items-center gap-3">
-        <label for="skuBase" class="text-[10px] font-semibold text-gray-500 uppercase">
-          SKU del artículo
-        </label>
-        <div class="relative inline-block">
-          <input
-            id="skuBase"
-            formControlName="sku"
-            type="text"
-            placeholder="El de la etiqueta"
-            class="w-48 border border-gray-200 rounded-lg pl-2.5 pr-14 py-1.5 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-black"
-          />
-          <app-escanear-campo [control]="formProduct.get('sku')" [texto]="'sku'" />
-        </div>
-        <span class="text-[11px] text-gray-400">
-          Si cada talle trae su propio SKU en la etiqueta, cargalo en la variante; si no, dejalo vacío.
-        </span>
-      </div>
-
       <!-- Empty state -->
       <div
         *ngIf="listVariants.length === 0"
@@ -549,6 +529,21 @@
         <div
           class="flex flex-wrap items-end gap-2 mb-3 p-3 bg-gray-50 border border-gray-100 rounded-xl"
         >
+          <div>
+            <label for="bulkSku" class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">
+              SKU (etiqueta)
+            </label>
+            <div class="relative">
+              <input
+                id="bulkSku"
+                type="text"
+                [formControl]="bulkSku"
+                placeholder="El de la etiqueta"
+                class="w-40 border border-gray-200 rounded-lg pl-2 pr-14 py-1.5 text-xs font-mono bg-white focus:outline-none focus:ring-1 focus:ring-black"
+              />
+              <app-escanear-campo [control]="bulkSku" [texto]="'sku'" />
+            </div>
+          </div>
           <div>
             <label for="bulkPrecio" class="block text-[10px] font-semibold text-gray-500 uppercase mb-1">
               Precio venta

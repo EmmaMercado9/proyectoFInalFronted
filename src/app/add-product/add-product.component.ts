@@ -5,6 +5,7 @@ import { apiErrorMessage } from '../error/error-handle.service';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import {
   FormArray,
+  FormControl,
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
@@ -78,6 +79,8 @@ export class AddProductComponent implements OnInit {
   bulkPrecio: number | null = null;
   bulkCosto: number | null = null;
   bulkStock: number | null = null;
+  /** SKU de la etiqueta para todos los talles (control propio, así se puede leer con la cámara) */
+  readonly bulkSku = new FormControl('', { nonNullable: true });
   // Variante default (productos sin variantes): su stock se edita con PATCH
   private varianteDefault: VarianteResponse | null = null;
   // Categoría padre elegida en el <select> (no viaja al backend)
@@ -495,9 +498,15 @@ export class AddProductComponent implements OnInit {
     });
   }
 
-  /** Completa precio / costo / stock en todas las variantes (solo los campos cargados) */
+  /** Completa SKU / precio / costo / stock en todas las variantes (solo los campos cargados) */
   aplicarATodas(): void {
-    const patch: Record<string, number> = {};
+    const patch: Record<string, number | string> = {};
+    const sku = this.bulkSku.value.trim().toUpperCase();
+    if (sku) {
+      patch['sku'] = sku;
+      // El producto queda con el mismo código: así lo encuentra la importación de facturas
+      this.formProduct.get('sku')?.setValue(sku);
+    }
     if (this.bulkPrecio !== null && `${this.bulkPrecio}` !== '') patch['precioVenta'] = +this.bulkPrecio;
     if (this.bulkCosto !== null && `${this.bulkCosto}` !== '') patch['costo'] = +this.bulkCosto;
     if (this.bulkStock !== null && `${this.bulkStock}` !== '') patch['stock'] = +this.bulkStock;

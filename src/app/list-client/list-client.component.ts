@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { UserService } from '../services/user.service';
 
 import { ClienteDTO, ClientService } from '../services/client.service';
 import {
@@ -34,6 +35,8 @@ export class ListClientComponent {
   bande: boolean = false;
   visibleClient: boolean = false;
   isLoading = false;
+  /** Eliminar clientes es solo del administrador */
+  readonly esAdmin = inject(UserService).isAdmin();
   constructor(
     private _clientService: ClientService,
     form: FormBuilder,
@@ -67,42 +70,88 @@ export class ListClientComponent {
       });
   }
 
-  addClient(): void {
+  /** Cliente que se está editando (null: se está creando uno nuevo) */
+  editando: ClienteDTO | null = null;
+
+  abrirNuevo(): void {
+    this.editando = null;
+    this.formClient.reset({ name: '', username: '', mail: '', dni: '' });
+    this.visibleClient = true;
+  }
+
+  abrirEditar(cliente: ClienteDTO): void {
+    this.editando = cliente;
+    this.formClient.reset({
+      name: cliente.name ?? '',
+      username: cliente.username ?? '',
+      mail: cliente.mail ?? '',
+      dni: cliente.dni ?? '',
+    });
+    this.visibleClient = true;
+  }
+
+  /** Crea o guarda los cambios, según cómo se abrió el formulario */
+  guardar(): void {
     if (this.formClient.invalid) {
       this.formClient.markAllAsTouched();
       return;
     }
-
     this.isLoading = true;
+    const v = this.formClient.value;
+    const datos: ClienteDTO = { name: v.name, username: v.username, mail: v.mail, dni: v.dni };
+    const editando = this.editando;
+    const pedido = editando?.idClient
+      ? this._clientService.actualizar(editando.idClient, datos)
+      : this._clientService.crear(datos);
 
-    const newClient: ClienteDTO = {
-      name: this.formClient.value.name,
-      username: this.formClient.value.username,
-
-      mail: this.formClient.value.mail,
-
-      dni: this.formClient.value.dni,
-    };
-
-    this._clientService
-      .crear(newClient)
+    pedido
       .pipe(
         catchError((err) => {
           this.isLoading = false;
-          this.showError(apiErrorMessage(err, 'Error al crear el cliente'));
+          this.showError(apiErrorMessage(err, editando ? 'No se pudo guardar el cliente' : 'Error al crear el cliente'));
           return of(null);
         })
       )
       .subscribe((resultado) => {
         if (!resultado) return;
-
         this.isLoading = false;
         this.visibleClient = false;
         this.formClient.reset();
-        this.showSuccess('Cliente creado correctamente');
+        this.showSuccess(editando ? 'Cliente actualizado' : 'Cliente creado correctamente');
+        this.editando = null;
         this.getClient();
       });
   }
+
+  eliminar(cliente: ClienteDTO): void {
+    if (!cliente.idClient) return;
+    const id = cliente.idClient;
+    this.confirmacionServi.confirm({
+      message: `¿Eliminar a "${cliente.name}${cliente.username ? ' ' + cliente.username : ''}"? No se puede deshacer. Si tiene ventas registradas no se podrá eliminar.`,
+      header: 'Eliminar cliente',
+      icon: 'pi pi-trash',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      rejectButtonStyleClass: 'p-button-text p-button-secondary',
+      accept: () => {
+        this._clientService
+          .eliminar(id)
+          .pipe(
+            catchError((err) => {
+              this.showError(apiErrorMessage(err, 'No se pudo eliminar el cliente'));
+              return of('error' as const);
+            })
+          )
+          .subscribe((r) => {
+            if (r === 'error') return;
+            this.listClient = this.listClient.filter((c) => c.idClient !== id);
+            this.showSuccess(`"${cliente.name}" fue eliminado`);
+          });
+      },
+    });
+  }
+
   showSuccess(msg: string): void {
     this.mesagge.add({
       severity: 'success',
@@ -121,34 +170,6 @@ export class ListClientComponent {
     });
   }
 
-  /*deleteClient(idClient: string): void {
-    const usuario = this.listClient.find((u) => u.idClient === idClient);
-
-    this.confirmacionServi.confirm({
-      message: `El cliente <strong>${usuario?.name}</strong> será eliminado permanentemente y no podrá recuperarse.`,
-      header: 'Eliminar cliente',
-      icon: 'pi pi-trash',
-      acceptLabel: 'Sí, eliminar',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => {
-        this._clientService
-          .delete(uuid)
-          .pipe(
-            catchError(() => {
-              this.showError('No se pudo eliminar el usuario');
-              return of(null);
-            })
-          )
-          .subscribe((res) => {
-            if (res === null) return;
-            this.listUsers = this.listUsers.filter((u) => u.uuid !== uuid);
-            this.showSuccess(`"${usuario?.name}" fue eliminado`);
-          });
-      },
-    });
-  }
-  */
   hasError(controlName: string, typeError: string) {
     return (
       this.formClient.get(controlName)?.hasError(typeError) &&

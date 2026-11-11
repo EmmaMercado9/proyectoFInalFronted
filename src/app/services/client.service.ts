@@ -32,6 +32,14 @@ export class ClientService {
     return this.http.post<ClienteDTO>(`${this.API}/clientes`, dto);
   }
 
+  actualizar(id: string, dto: ClienteDTO): Observable<ClienteDTO> {
+    return this.http.put<ClienteDTO>(`${this.API}/clientes/${id}`, dto);
+  }
+
+  eliminar(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.API}/clientes/${id}`);
+  }
+
   // GET /api/clientes/:id
   getById(id: string): Observable<ClienteDTO> {
     return this.http.get<ClienteDTO>(`${this.API}/clientes/${id}`);
